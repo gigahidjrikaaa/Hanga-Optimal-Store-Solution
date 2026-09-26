@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" fill="none">
+  <!-- Hanga Logo Mark -->
+  <g transform="translate(4, 4)">
+    <!-- Warung Awning / Canopy Roof -->
+    <path d="M4 18 C4 14, 8 10, 14 10 L42 10 C48 10, 52 14, 52 18 L50 24 C48 27, 43 27, 40 24 C37 27, 31 27, 28 24 C25 27, 19 27, 16 24 L14 18" 
+          fill="#0E9F6E" />
+    
+    <!-- Left Column / Shelf -->
+    <path d="M12 24 L12 48 C12 50, 14 52, 17 52 L22 52 C23 52, 24 51, 24 50 L24 38 L18 38 L18 24 Z" 
+          fill="#0E9F6E" />
+
+    <!-- Right Column / Shelf -->
+    <path d="M44 24 L44 50 C44 51, 45 52, 46 52 L51 52 C54 52, 56 50, 56 48 L56 24 Z" 
+          fill="#0E9F6E" />
+
+    <!-- Crossbar / Horizontal Shelf (forms 'H') -->
+    <rect x="20" y="34" width="28" height="5" rx="2.5" fill="#046C4E" opacity="0.85" />
+
+    <!-- Upward Trend Stock Sparkline & Arrow (Optimization) -->
+    <path d="M6 44 L20 30 L30 38 L48 16" 
+          stroke="#10B981" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M40 16 L49 15 L50 24" 
+          fill="#10B981" stroke="#10B981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Wordmark "HANGA" -->
+  <text x="74" y="36" 
+        font-family="system-ui, -apple-system, 'Plus Jakarta Sans', sans-serif" 
+        font-size="28" 
+        font-weight="800" 
+        letter-spacing="0.04em" 
+        fill="#101828">
+    HANGA
+  </text>
+
+  <!-- Subtitle "OPTIMAL STORE SOLUTION" -->
+  <text x="75" y="51" 
+        font-family="system-ui, -apple-system, 'Plus Jakarta Sans', sans-serif" 
+        font-size="8.5" 
+        font-weight="700" 
+        letter-spacing="0.14em" 
+        fill="#0E9F6E">
+    OPTIMAL STORE SOLUTION
+  </text>
+</svg>

@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./apps/api/.env
+    environment:
+      - HANGA_DEBUG=true
+      - HANGA_CORS_ORIGINS=["http://localhost:3000"]
+    volumes:
+      - ./apps/api/app:/app/app  # Hot-reload in dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./apps/web/.env.local
+    depends_on:
+      - api

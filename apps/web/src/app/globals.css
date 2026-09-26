@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+/*
+ * Hanga Design System — Global CSS
+ *
+ * Design tokens from docs/design_system.md v1.0
+ * Font: Plus Jakarta Sans (Google Fonts)
+ * 4pt spacing grid · mobile-first · max-width 480px shell
+ */
+
+/* ------------------------------------------------------------------ */
+/* 1. Design Tokens (CSS Custom Properties)                           */
+/* ------------------------------------------------------------------ */
+
+:root {
+  /* Brand */
+  --color-brand-100: #DEF7EC;
+  --color-brand-600: #0E9F6E;
+  --color-brand-800: #046C4E;
+
+  /* Ink */
+  --color-ink-900: #101828;
+  --color-ink-600: #475467;
+
+  /* Surface */
+  --color-surface: #FFFFFF;
+  --color-canvas: #F6F8FA;
+  --color-border: #E4E7EC;
+
+  /* Warn */
+  --color-warn-100: #FEF0C7;
+  --color-warn-600: #F79009;
+
+  /* Danger */
+  --color-danger-100: #FEE4E2;
+  --color-danger-600: #D92D20;
+
+  /* Info */
+  --color-info-600: #1570EF;
+
+  /* Neutral */
+  --color-neutral-400: #98A2B3;
+
+  /* Spacing (4pt grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-chip: 8px;
+  --radius-card: 12px;
+  --radius-sheet: 16px;
+  --radius-badge: 9999px;
+
+  /* Elevation */
+  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.10);
+  --shadow-sheet: 0 -4px 16px rgba(16, 24, 40, 0.14);
+
+  /* Motion */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+}
+
+/* ------------------------------------------------------------------ */
+/* 2. Tailwind v4 Theme Inline                                        */
+/* ------------------------------------------------------------------ */
+
+@theme inline {
+  /* Colors */
+  --color-brand-100: var(--color-brand-100);
+  --color-brand-600: var(--color-brand-600);
+  --color-brand-800: var(--color-brand-800);
+  --color-ink-900: var(--color-ink-900);
+  --color-ink-600: var(--color-ink-600);
+  --color-surface: var(--color-surface);
+  --color-canvas: var(--color-canvas);
+  --color-border: var(--color-border);
+  --color-warn-100: var(--color-warn-100);
+  --color-warn-600: var(--color-warn-600);
+  --color-danger-100: var(--color-danger-100);
+  --color-danger-600: var(--color-danger-600);
+  --color-info-600: var(--color-info-600);
+  --color-neutral-400: var(--color-neutral-400);
+
+  /* Font family */
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. Base styles                                                     */
+/* ------------------------------------------------------------------ */
+
+html {
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink-900);
+  font-size: 15px;
+  line-height: 22px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. Typography utility classes                                      */
+/* ------------------------------------------------------------------ */
+
+.text-display {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 800;
+}
+
+.text-title {
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 700;
+}
+
+.text-heading {
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.text-body {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.text-caption {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+.text-numeric {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. Skeleton shimmer (for loads > 400ms)                            */
+/* ------------------------------------------------------------------ */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-border) 25%,
+    var(--color-canvas) 50%,
+    var(--color-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-card);
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. Confidence badge colors                                         */
+/* ------------------------------------------------------------------ */
+
+.confidence-high {
+  background-color: var(--color-brand-100);
+  color: var(--color-brand-800);
+}
+
+.confidence-medium {
+  background-color: var(--color-warn-100);
+  color: var(--color-warn-600);
+}
+
+.confidence-low {
+  background-color: var(--color-canvas);
+  color: var(--color-neutral-400);
+}
+
+/* ------------------------------------------------------------------ */
+/* 7. Touch targets — accessibility (≥48px)                           */
+/* ------------------------------------------------------------------ */
+
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
