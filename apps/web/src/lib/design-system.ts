@@ -84,6 +84,7 @@ export const FACTOR_CONFIG: Record<FactorKey, FactorConfig> = {
   TREND_DOWN: { icon: "📉", label: "Tren turun" },
   WASTE_RISK: { icon: "⚠️", label: "Risiko buang" },
   LOW_DATA: { icon: "📊", label: "Data sedikit" },
+  CASH_TIGHT: { icon: "💵", label: "Kas terbatas" },
 };
 
 // ---------------------------------------------------------------------------

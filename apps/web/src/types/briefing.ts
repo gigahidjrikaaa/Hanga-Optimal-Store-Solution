@@ -28,7 +28,8 @@ export type FactorKey =
   | "TREND_UP"
   | "TREND_DOWN"
   | "WASTE_RISK"
-  | "LOW_DATA";
+  | "LOW_DATA"
+  | "CASH_TIGHT";
 
 export type Confidence = "HIGH" | "MEDIUM" | "LOW";
 
@@ -78,11 +79,27 @@ export interface OrderDraft {
 export interface Recommendation {
   action: ActionType;
   sku: string;
+  /** Product display name in Bahasa; UI renders this, never the SKU code (v1.1). */
+  name?: string | null;
+  /** Cost of the recommended qty.likely; renders even without order_draft (v1.1). */
+  est_cost_idr?: number | null;
   qty: QuantityRange;
   confidence: Confidence;
   factors: Factor[];
   rationale_bahasa: string;
   order_draft?: OrderDraft | null;
+}
+
+/**
+ * Cash-budget fit for this briefing's order bundle (v1.1).
+ * Fitted entirely by the compute layer; Gemma only explains it.
+ */
+export interface Budget {
+  cash_available_idr: number;
+  committed_idr: number;
+  remaining_idr: number; // may be negative in live mode
+  deferred_skus: string[];
+  note_bahasa: string;
 }
 
 export interface BaselineCompare {
@@ -106,6 +123,7 @@ export interface DailyBriefing {
   generated_at: string; // ISO datetime string
   scenario: Scenario;
   headline: string;
+  budget?: Budget | null; // v1.1
   movers: Movers;
   risks: Risk[];
   recommendations: Recommendation[];

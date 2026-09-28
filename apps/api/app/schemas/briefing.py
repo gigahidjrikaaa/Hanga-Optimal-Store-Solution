@@ -61,6 +61,7 @@ class FactorKey(StrEnum):
     WASTE_RISK = "WASTE_RISK"
     LOW_DATA = "LOW_DATA"
     RAIN_TOMORROW = "RAIN_TOMORROW"
+    CASH_TIGHT = "CASH_TIGHT"
 
 
 class Confidence(StrEnum):
@@ -134,6 +135,15 @@ class Recommendation(BaseModel):
 
     action: ActionType
     sku: str
+    name: str | None = Field(
+        default=None,
+        description="Product display name in Bahasa; UI renders this, never the SKU code",
+    )
+    est_cost_idr: int | None = Field(
+        default=None,
+        ge=0,
+        description="Cost of the recommended qty.likely in IDR; renders even without order_draft",
+    )
     qty: QuantityRange
     confidence: Confidence
     factors: list[Factor] = Field(default_factory=list, max_length=4)
@@ -143,6 +153,30 @@ class Recommendation(BaseModel):
         description="Plain Bahasa rationale, ≤160 chars, no model jargon",
     )
     order_draft: OrderDraft | None = None
+
+
+class Budget(BaseModel):
+    """
+    Cash-budget fit for this briefing's order bundle (v1.1).
+
+    Fitted entirely by the compute layer (greedy fund within cash); Gemma may
+    explain deferrals but never change the fit. See briefing_spec.md §4/§6.
+    """
+
+    cash_available_idr: int = Field(..., ge=0, description="Spendable cash today")
+    committed_idr: int = Field(
+        default=0, ge=0, description="Total cost of recommendations funded today"
+    )
+    remaining_idr: int = Field(
+        ..., description="Cash left after committed orders; may be negative in live mode"
+    )
+    deferred_skus: list[str] = Field(
+        default_factory=list,
+        description="SKUs postponed because cash ran out; each keeps action=REORDER with a CASH_TIGHT factor",
+    )
+    note_bahasa: str = Field(
+        ..., max_length=120, description="Plain Bahasa budget explanation"
+    )
 
 
 class BaselineCompare(BaseModel):
@@ -170,17 +204,21 @@ class DataQuality(BaseModel):
 
 class DailyBriefing(BaseModel):
     """
-    The complete DailyBriefing JSON schema (v1).
+    The complete DailyBriefing JSON schema (v1.1).
 
     This is the contract between the Cloud Run compute layer, Gemma,
     Firestore, and the frontend UI. See docs/briefing_spec.md §2.
     """
 
-    version: str = Field(default="1.0", description="Schema version")
+    version: str = Field(default="1.1", description="Schema version")
     shop_id: str
     generated_at: datetime
     scenario: Scenario
     headline: str = Field(..., max_length=80, description="Bahasa headline, ≤80 chars")
+    budget: Budget | None = Field(
+        default=None,
+        description="Cash-budget fit (v1.1) — fitted by code, explained by Gemma",
+    )
     movers: Movers
     risks: list[Risk] = Field(default_factory=list)
     recommendations: list[Recommendation] = Field(default_factory=list, max_length=5)
@@ -191,16 +229,27 @@ class DailyBriefing(BaseModel):
         "json_schema_extra": {
             "examples": [
                 {
-                    "version": "1.0",
+                    "version": "1.1",
                     "shop_id": "warung-bu-sari",
                     "generated_at": "2026-10-10T06:00:00+07:00",
                     "scenario": "BASELINE",
                     "headline": "Gula dan minyak laris — pertimbangkan pesan ulang hari ini",
+                    "budget": {
+                        "cash_available_idr": 700000,
+                        "committed_idr": 546000,
+                        "remaining_idr": 154000,
+                        "deferred_skus": [],
+                        "note_bahasa": "Semua pesanan prioritas muat di kas hari ini.",
+                    },
                     "movers": {
-                        "fast": [{"sku": "GULA-1KG", "name": "Gula pasir 1kg", "delta_7d": 0.22}],
-                        "slow": [
-                            {"sku": "SUSU-UHT-1L", "name": "Susu UHT 1L", "delta_7d": -0.31}
+                        "fast": [
+                            {
+                                "sku": "GULA-1KG",
+                                "name": "Gula pasir 1kg",
+                                "delta_7d": 0.22,
+                            }
                         ],
+                        "slow": [],
                     },
                     "risks": [],
                     "recommendations": [],

@@ -2,18 +2,28 @@
  * Client-side Demo Data Fallback for Hanga.
  *
  * Provides instant, zero-latency scenario snapshots for Warung Bu Sari
- * matching the DailyBriefing schema. Used when offline or during initial hydration.
+ * matching the DailyBriefing schema (v1.1: budget block, product names,
+ * per-recommendation est_cost_idr). Used when offline or during initial
+ * hydration. Mirrors apps/api/app/services/seed_data.py exactly.
  */
 
 import { DailyBriefing, Scenario } from "@/types";
 
 export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
   BASELINE: {
-    version: "1.0",
+    version: "1.1",
     shop_id: "warung-bu-sari",
     generated_at: "2026-10-10T06:00:00+07:00",
     scenario: "BASELINE",
     headline: "Sabtu normal: gula dan telur menipis, amankan stok pagi ini.",
+    budget: {
+      cash_available_idr: 700000,
+      committed_idr: 546000,
+      remaining_idr: 154000,
+      deferred_skus: [],
+      note_bahasa:
+        "Semua pesanan prioritas muat di kas hari ini. Sisa kas aman untuk belanja besok.",
+    },
     movers: {
       fast: [
         { sku: "GULA-1KG", name: "Gula Pasir Gulaku 1kg", delta_7d: 0.22 },
@@ -45,6 +55,8 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "GULA-1KG",
+        name: "Gula Pasir Gulaku 1kg",
+        est_cost_idr: 210000,
         qty: { min: 10, likely: 15, max: 20, unit: "kg" },
         confidence: "HIGH",
         factors: [
@@ -62,6 +74,8 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "TELUR-1KG",
+        name: "Telur Ayam Negeri 1kg",
+        est_cost_idr: 336000,
         qty: { min: 10, likely: 12, max: 15, unit: "kg" },
         confidence: "HIGH",
         factors: [
@@ -78,6 +92,7 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "PROMO",
         sku: "SUSU-UHT-1L",
+        name: "Susu UHT Cokelat 1L",
         qty: { min: 3, likely: 5, max: 8, unit: "kotak" },
         confidence: "MEDIUM",
         factors: [
@@ -89,6 +104,7 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "HOLD",
         sku: "MINYAK-GORENG-2L",
+        name: "Minyak Bimoli 2L",
         qty: { min: 0, likely: 0, max: 0, unit: "pouch" },
         confidence: "MEDIUM",
         factors: [
@@ -99,6 +115,7 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "SKIP",
         sku: "SABUN-COLEK",
+        name: "Sabun Colek Ekonomi 200g",
         qty: { min: 0, likely: 0, max: 0, unit: "bungkus" },
         confidence: "LOW",
         factors: [
@@ -119,11 +136,19 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
   },
 
   LEBARAN_T14: {
-    version: "1.0",
+    version: "1.1",
     shop_id: "warung-bu-sari",
     generated_at: "2026-10-10T06:00:00+07:00",
     scenario: "LEBARAN_T14",
     headline: "Lebaran H-14: Borong sirup, biskuit & tepung! Permintaan melonjak drastis.",
+    budget: {
+      cash_available_idr: 2500000,
+      committed_idr: 2412000,
+      remaining_idr: 88000,
+      deferred_skus: ["TEPUNG-TERIGU-1KG"],
+      note_bahasa:
+        "Kas hari ini fokus sirup & biskuit. Tepung dipesan besok pagi setelah uang masuk.",
+    },
     movers: {
       fast: [
         { sku: "SIRUP-MARJAN-650ML", name: "Sirup Marjan Boudoin 650ml", delta_7d: 1.45 },
@@ -155,6 +180,8 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "SIRUP-MARJAN-650ML",
+        name: "Sirup Marjan Boudoin 650ml",
+        est_cost_idr: 792000,
         qty: { min: 24, likely: 36, max: 48, unit: "botol" },
         confidence: "HIGH",
         factors: [
@@ -173,6 +200,8 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "BISKUIT-KHONG-GUAN",
+        name: "Khong Guan Biscuit Can 650g",
+        est_cost_idr: 1620000,
         qty: { min: 12, likely: 18, max: 24, unit: "kaleng" },
         confidence: "HIGH",
         factors: [
@@ -190,23 +219,27 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "TEPUNG-TERIGU-1KG",
+        name: "Tepung Terigu Segitiga Biru 1kg",
+        est_cost_idr: 330000,
         qty: { min: 20, likely: 30, max: 40, unit: "kg" },
-        confidence: "HIGH",
+        confidence: "MEDIUM",
         factors: [
           { key: "LEBARAN_T14", direction: "+", weight: 0.35, note_bahasa: "pembuatan kue kering" },
+          { key: "CASH_TIGHT", direction: "-", weight: -0.32, note_bahasa: "kas hari ini sudah terpakai" },
         ],
         rationale_bahasa:
-          "Pesan 30 kg tepung: pesanan kue nastar & kastengel warga sekitar mulai berjalan ramai.",
+          "Pesan 30 kg tepung besok pagi: kas hari ini dipakai sirup & biskuit dulu, pesanan kue warga tetap jalan.",
         order_draft: {
           supplier_ref: "TOKO GROSIR JAYA",
           est_cost_idr: 330000,
           wa_deep_link:
-            "https://wa.me/6281234567890?text=Halo%20Grosir%20Jaya,%20Bu%20Sari%20pesan%20Tepung%20Terigu%20Segitiga%2030%20kg.%20Terima%20kasih.",
+            "https://wa.me/6281234567890?text=Halo%20Grosir%20Jaya,%20Bu%20Sari%20pesan%20Tepung%20Terigu%20Segitiga%2030%20kg%20besok%20pagi.%20Terima%20kasih.",
         },
       },
       {
         action: "HOLD",
         sku: "MIE-INSTAN-GORENG",
+        name: "Indomie Goreng Original",
         qty: { min: 0, likely: 0, max: 0, unit: "dus" },
         confidence: "MEDIUM",
         factors: [
@@ -217,6 +250,7 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "SKIP",
         sku: "SUSU-UHT-1L",
+        name: "Susu UHT Cokelat 1L",
         qty: { min: 0, likely: 0, max: 0, unit: "kotak" },
         confidence: "LOW",
         factors: [
@@ -237,11 +271,18 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
   },
 
   PAYDAY_T3: {
-    version: "1.0",
+    version: "1.1",
     shop_id: "warung-bu-sari",
     generated_at: "2026-10-10T06:00:00+07:00",
     scenario: "PAYDAY_T3",
     headline: "Musim Gajian: Daya beli warga naik! Tambah stok beras, minyak & rokok premium.",
+    budget: {
+      cash_available_idr: 2000000,
+      committed_idr: 1737000,
+      remaining_idr: 263000,
+      deferred_skus: [],
+      note_bahasa: "Semua pesanan muat; sisa kas masih aman untuk belanja harian.",
+    },
     movers: {
       fast: [
         { sku: "BERAS-PANDAN-5KG", name: "Beras Pandan Wangi 5kg", delta_7d: 0.48 },
@@ -263,6 +304,8 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "BERAS-PANDAN-5KG",
+        name: "Beras Pandan Wangi 5kg",
+        est_cost_idr: 1125000,
         qty: { min: 10, likely: 15, max: 20, unit: "karung" },
         confidence: "HIGH",
         factors: [
@@ -281,6 +324,8 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "MINYAK-GORENG-2L",
+        name: "Minyak Bimoli 2L",
+        est_cost_idr: 612000,
         qty: { min: 12, likely: 18, max: 24, unit: "pouch" },
         confidence: "HIGH",
         factors: [
@@ -298,6 +343,7 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "HOLD",
         sku: "IKAN-ASIN-100G",
+        name: "Ikan Asin Teri 100g",
         qty: { min: 0, likely: 0, max: 0, unit: "bungkus" },
         confidence: "MEDIUM",
         factors: [
@@ -318,11 +364,18 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
   },
 
   RAIN_TOMORROW: {
-    version: "1.0",
+    version: "1.1",
     shop_id: "warung-bu-sari",
     generated_at: "2026-10-10T06:00:00+07:00",
     scenario: "RAIN_TOMORROW",
     headline: "Prakiraan Hujan Lebat: Siapkan mie kuah & kopi sachet, tahan stok roti basah.",
+    budget: {
+      cash_available_idr: 500000,
+      committed_idr: 430000,
+      remaining_idr: 70000,
+      deferred_skus: [],
+      note_bahasa: "Pesanan anti-hujan muat di kas. Lewatkan roti agar modal tidak nyangkut.",
+    },
     movers: {
       fast: [
         { sku: "MIE-SOTO-AYAM", name: "Indomie Soto Mie Kuah", delta_7d: 0.62 },
@@ -354,6 +407,8 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "MIE-SOTO-AYAM",
+        name: "Indomie Soto Mie Kuah",
+        est_cost_idr: 345000,
         qty: { min: 2, likely: 3, max: 4, unit: "dus" },
         confidence: "HIGH",
         factors: [
@@ -371,6 +426,8 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "REORDER",
         sku: "KOPI-JAHE-SACHET",
+        name: "Kopi Jahe KukuBima Sachet",
+        est_cost_idr: 85000,
         qty: { min: 3, likely: 5, max: 6, unit: "renceng" },
         confidence: "HIGH",
         factors: [
@@ -387,6 +444,7 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "SKIP",
         sku: "ROTI-BASAH",
+        name: "Roti Manis Sari Roti",
         qty: { min: 0, likely: 0, max: 0, unit: "buah" },
         confidence: "HIGH",
         factors: [
@@ -398,6 +456,7 @@ export const DEMO_BRIEFINGS: Record<Scenario, DailyBriefing> = {
       {
         action: "HOLD",
         sku: "ES-KRIM-CONE",
+        name: "Es Krim Wall's Cornetto",
         qty: { min: 0, likely: 0, max: 0, unit: "buah" },
         confidence: "MEDIUM",
         factors: [

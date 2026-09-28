@@ -20,10 +20,20 @@ interface RecommendationCardProps {
 }
 
 export function RecommendationCard({ recommendation }: RecommendationCardProps) {
-  const { action, sku, qty, confidence, factors, rationale_bahasa, order_draft } =
-    recommendation;
+  const {
+    action,
+    sku,
+    name,
+    est_cost_idr,
+    qty,
+    confidence,
+    factors,
+    rationale_bahasa,
+    order_draft,
+  } = recommendation;
   const actionBadge = ACTION_BADGES[action];
   const confidenceConfig = CONFIDENCE_CONFIG[confidence];
+  const displayName = name ?? sku;
 
   // Only show factors with |weight| >= 0.05, max 4, sorted by |weight| (spec §4)
   const visibleFactors = factors
@@ -47,8 +57,8 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         {actionBadge.label}
       </span>
 
-      {/* Product name */}
-      <h3 className="text-heading text-ink-900">{sku}</h3>
+      {/* Product name — never the SKU code (design_system.md §4) */}
+      <h3 className="text-heading text-ink-900">{displayName}</h3>
 
       {/* Quantity range */}
       <p className="text-numeric text-body text-ink-900">
@@ -57,6 +67,13 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
           · kemungkinan {qty.likely} {qty.unit}
         </span>
       </p>
+
+      {/* Estimated cost (v1.1) */}
+      {est_cost_idr != null && est_cost_idr > 0 && (
+        <p className="text-numeric text-caption text-ink-600">
+          ±{formatIDR(est_cost_idr)}
+        </p>
+      )}
 
       {/* Confidence badge */}
       <span
@@ -88,7 +105,8 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
               >
                 <span aria-hidden="true">{config.icon}</span>
                 {config.label}{" "}
-                {formatDelta(factor.weight)}
+                {/* CASH_TIGHT deferral is binary — no percentage (spec §3) */}
+                {factor.key !== "CASH_TIGHT" && formatDelta(factor.weight)}
               </span>
             );
           })}

@@ -17,6 +17,7 @@ import { RiskBanner } from "@/components/risk-banner";
 import { RecommendationCard } from "@/components/recommendation-card";
 import { MoverList } from "@/components/mover-list";
 import { api } from "@/lib/api";
+import { formatIDR } from "@/lib/design-system";
 import { DEMO_BRIEFINGS } from "@/lib/demo-data";
 import type { DailyBriefing, Scenario } from "@/types";
 
@@ -78,6 +79,34 @@ export default function BerandaPage() {
           onSelect={setActiveScenario}
           disabled={isLoading}
         />
+
+        {/* Cash budget fit (v1.1) */}
+        {briefing && !isLoading && briefing.budget && (
+          <div className="px-4">
+            <div
+              className="bg-brand-100/70 p-3 flex flex-col gap-1"
+              style={{ borderRadius: "var(--radius-card)" }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-caption font-semibold text-brand-800">
+                  💵 Kas hari ini {formatIDR(briefing.budget.cash_available_idr)}
+                </span>
+                <span className="text-numeric text-caption text-ink-600">
+                  Terpakai {formatIDR(briefing.budget.committed_idr)} · Sisa{" "}
+                  {formatIDR(briefing.budget.remaining_idr)}
+                </span>
+              </div>
+              {briefing.budget.deferred_skus.length > 0 && (
+                <span className="text-caption text-warn-600">
+                  ⏳ Ditunda besok: {briefing.budget.deferred_skus.join(", ")}
+                </span>
+              )}
+              <span className="text-caption text-ink-600">
+                {briefing.budget.note_bahasa}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Loading skeleton */}
         {isLoading && (

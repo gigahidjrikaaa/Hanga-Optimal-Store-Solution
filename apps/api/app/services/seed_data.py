@@ -8,13 +8,20 @@ on 2026-10-10 across all 4 canonical scenarios:
 - PAYDAY_T3 (Salary week: higher purchasing power & FMCG volume)
 - RAIN_TOMORROW (Heavy rain forecast: depressed foot traffic, warm goods surge)
 
-Contract: docs/briefing_spec.md §2
+Each briefing carries a v1.1 `budget` block: a cash-feasible order bundle fitted
+by the compute layer. LEBARAN_T14 deliberately overruns cash so the demo shows a
+*visible deferral* (CASH_TIGHT) — the cash-first advisor story.
+
+Contract: docs/briefing_spec.md §2 (v1.1)
+Demo invariants: committed_idr ≤ cash_available_idr; deferred_skus always match
+the recommendations carrying a CASH_TIGHT factor.
 """
 
 from datetime import datetime
 from app.schemas.briefing import (
     ActionType,
     BaselineCompare,
+    Budget,
     Confidence,
     DailyBriefing,
     DataQuality,
@@ -48,13 +55,20 @@ def get_demo_briefing(scenario: Scenario, shop_id: str = DEMO_SHOP_ID) -> DailyB
 
 
 def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
-    """BASELINE: Normal Saturday morning operations."""
+    """BASELINE: Normal Saturday morning operations; bundle fits cash comfortably."""
     return DailyBriefing(
-        version="1.0",
+        version="1.1",
         shop_id=shop_id,
         generated_at=DEMO_DATETIME,
         scenario=Scenario.BASELINE,
         headline="Sabtu normal: gula dan telur menipis, amankan stok pagi ini.",
+        budget=Budget(
+            cash_available_idr=700000,
+            committed_idr=546000,
+            remaining_idr=154000,
+            deferred_skus=[],
+            note_bahasa="Semua pesanan prioritas muat di kas hari ini. Sisa kas aman untuk belanja besok.",
+        ),
         movers=Movers(
             fast=[
                 Mover(sku="GULA-1KG", name="Gula Pasir Gulaku 1kg", delta_7d=0.22),
@@ -86,6 +100,8 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="GULA-1KG",
+                name="Gula Pasir Gulaku 1kg",
+                est_cost_idr=210000,
                 qty=QuantityRange(min=10, likely=15, max=20, unit="kg"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -102,6 +118,8 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="TELUR-1KG",
+                name="Telur Ayam Negeri 1kg",
+                est_cost_idr=336000,
                 qty=QuantityRange(min=10, likely=12, max=15, unit="kg"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -117,6 +135,7 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.PROMO,
                 sku="SUSU-UHT-1L",
+                name="Susu UHT Cokelat 1L",
                 qty=QuantityRange(min=3, likely=5, max=8, unit="kotak"),
                 confidence=Confidence.MEDIUM,
                 factors=[
@@ -129,6 +148,7 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.HOLD,
                 sku="MINYAK-GORENG-2L",
+                name="Minyak Bimoli 2L",
                 qty=QuantityRange(min=0, likely=0, max=0, unit="pouch"),
                 confidence=Confidence.MEDIUM,
                 factors=[
@@ -140,6 +160,7 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.SKIP,
                 sku="SABUN-COLEK",
+                name="Sabun Colek Ekonomi 200g",
                 qty=QuantityRange(min=0, likely=0, max=0, unit="bungkus"),
                 confidence=Confidence.LOW,
                 factors=[
@@ -162,13 +183,20 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
 
 
 def _build_lebaran_briefing(shop_id: str) -> DailyBriefing:
-    """LEBARAN_T14: 14 days before Lebaran — seasonal bulk demand surges, perishable priorities invert."""
+    """LEBARAN_T14: bulk demand surges past available cash — one item deferred visibly."""
     return DailyBriefing(
-        version="1.0",
+        version="1.1",
         shop_id=shop_id,
         generated_at=DEMO_DATETIME,
         scenario=Scenario.LEBARAN_T14,
         headline="Lebaran H-14: Borong sirup, biskuit & tepung! Permintaan melonjak drastis.",
+        budget=Budget(
+            cash_available_idr=2500000,
+            committed_idr=2412000,
+            remaining_idr=88000,
+            deferred_skus=["TEPUNG-TERIGU-1KG"],
+            note_bahasa="Kas hari ini fokus sirup & biskuit. Tepung dipesan besok pagi setelah uang masuk.",
+        ),
         movers=Movers(
             fast=[
                 Mover(sku="SIRUP-MARJAN-650ML", name="Sirup Marjan Boudoin 650ml", delta_7d=1.45),
@@ -200,6 +228,8 @@ def _build_lebaran_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="SIRUP-MARJAN-650ML",
+                name="Sirup Marjan Boudoin 650ml",
+                est_cost_idr=792000,
                 qty=QuantityRange(min=24, likely=36, max=48, unit="botol"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -216,6 +246,8 @@ def _build_lebaran_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="BISKUIT-KHONG-GUAN",
+                name="Khong Guan Biscuit Can 650g",
+                est_cost_idr=1620000,
                 qty=QuantityRange(min=12, likely=18, max=24, unit="kaleng"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -231,21 +263,25 @@ def _build_lebaran_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="TEPUNG-TERIGU-1KG",
+                name="Tepung Terigu Segitiga Biru 1kg",
+                est_cost_idr=330000,
                 qty=QuantityRange(min=20, likely=30, max=40, unit="kg"),
-                confidence=Confidence.HIGH,
+                confidence=Confidence.MEDIUM,
                 factors=[
                     Factor(key=FactorKey.LEBARAN_T14, direction="+", weight=0.35, note_bahasa="pembuatan kue kering"),
+                    Factor(key=FactorKey.CASH_TIGHT, direction="-", weight=-0.32, note_bahasa="kas hari ini sudah terpakai"),
                 ],
-                rationale_bahasa="Pesan 30 kg tepung: pesanan kue nastar & kastengel warga sekitar mulai berjalan ramai.",
+                rationale_bahasa="Pesan 30 kg tepung besok pagi: kas hari ini dipakai sirup & biskuit dulu, pesanan kue warga tetap jalan.",
                 order_draft=OrderDraft(
                     supplier_ref="TOKO GROSIR JAYA",
                     est_cost_idr=330000,
-                    wa_deep_link="https://wa.me/6281234567890?text=Halo%20Grosir%20Jaya,%20Bu%20Sari%20pesan%20Tepung%20Terigu%20Segitiga%2030%20kg.%20Terima%20kasih.",
+                    wa_deep_link="https://wa.me/6281234567890?text=Halo%20Grosir%20Jaya,%20Bu%20Sari%20pesan%20Tepung%20Terigu%20Segitiga%2030%20kg%20besok%20pagi.%20Terima%20kasih.",
                 ),
             ),
             Recommendation(
                 action=ActionType.HOLD,
                 sku="MIE-INSTAN-GORENG",
+                name="Indomie Goreng Original",
                 qty=QuantityRange(min=0, likely=0, max=0, unit="dus"),
                 confidence=Confidence.MEDIUM,
                 factors=[
@@ -257,6 +293,7 @@ def _build_lebaran_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.SKIP,
                 sku="SUSU-UHT-1L",
+                name="Susu UHT Cokelat 1L",
                 qty=QuantityRange(min=0, likely=0, max=0, unit="kotak"),
                 confidence=Confidence.LOW,
                 factors=[
@@ -279,13 +316,20 @@ def _build_lebaran_briefing(shop_id: str) -> DailyBriefing:
 
 
 def _build_payday_briefing(shop_id: str) -> DailyBriefing:
-    """PAYDAY_T3: 3 days after payday — higher basket size, premium brands move fast."""
+    """PAYDAY_T3: higher basket size; bundle fits post-payday cash comfortably."""
     return DailyBriefing(
-        version="1.0",
+        version="1.1",
         shop_id=shop_id,
         generated_at=DEMO_DATETIME,
         scenario=Scenario.PAYDAY_T3,
         headline="Musim Gajian: Daya beli warga naik! Tambah stok beras, minyak & rokok premium.",
+        budget=Budget(
+            cash_available_idr=2000000,
+            committed_idr=1737000,
+            remaining_idr=263000,
+            deferred_skus=[],
+            note_bahasa="Semua pesanan muat; sisa kas masih aman untuk belanja harian.",
+        ),
         movers=Movers(
             fast=[
                 Mover(sku="BERAS-PANDAN-5KG", name="Beras Pandan Wangi 5kg", delta_7d=0.48),
@@ -309,6 +353,8 @@ def _build_payday_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="BERAS-PANDAN-5KG",
+                name="Beras Pandan Wangi 5kg",
+                est_cost_idr=1125000,
                 qty=QuantityRange(min=10, likely=15, max=20, unit="karung"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -325,6 +371,8 @@ def _build_payday_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="MINYAK-GORENG-2L",
+                name="Minyak Bimoli 2L",
+                est_cost_idr=612000,
                 qty=QuantityRange(min=12, likely=18, max=24, unit="pouch"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -340,6 +388,7 @@ def _build_payday_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.HOLD,
                 sku="IKAN-ASIN-100G",
+                name="Ikan Asin Teri 100g",
                 qty=QuantityRange(min=0, likely=0, max=0, unit="bungkus"),
                 confidence=Confidence.MEDIUM,
                 factors=[
@@ -362,13 +411,20 @@ def _build_payday_briefing(shop_id: str) -> DailyBriefing:
 
 
 def _build_rain_briefing(shop_id: str) -> DailyBriefing:
-    """RAIN_TOMORROW: Forecast indicates heavy rain tomorrow — foot traffic down, hot beverages/noodles surge."""
+    """RAIN_TOMORROW: foot traffic down, warm goods surge; small bundle fits cash."""
     return DailyBriefing(
-        version="1.0",
+        version="1.1",
         shop_id=shop_id,
         generated_at=DEMO_DATETIME,
         scenario=Scenario.RAIN_TOMORROW,
         headline="Prakiraan Hujan Lebat: Siapkan mie kuah & kopi sachet, tahan stok roti basah.",
+        budget=Budget(
+            cash_available_idr=500000,
+            committed_idr=430000,
+            remaining_idr=70000,
+            deferred_skus=[],
+            note_bahasa="Pesanan anti-hujan muat di kas. Lewatkan roti agar modal tidak nyangkut.",
+        ),
         movers=Movers(
             fast=[
                 Mover(sku="MIE-SOTO-AYAM", name="Indomie Soto Mie Kuah", delta_7d=0.62),
@@ -400,6 +456,8 @@ def _build_rain_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="MIE-SOTO-AYAM",
+                name="Indomie Soto Mie Kuah",
+                est_cost_idr=345000,
                 qty=QuantityRange(min=2, likely=3, max=4, unit="dus"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -416,6 +474,8 @@ def _build_rain_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.REORDER,
                 sku="KOPI-JAHE-SACHET",
+                name="Kopi Jahe KukuBima Sachet",
+                est_cost_idr=85000,
                 qty=QuantityRange(min=3, likely=5, max=6, unit="renceng"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -431,6 +491,7 @@ def _build_rain_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.SKIP,
                 sku="ROTI-BASAH",
+                name="Roti Manis Sari Roti",
                 qty=QuantityRange(min=0, likely=0, max=0, unit="buah"),
                 confidence=Confidence.HIGH,
                 factors=[
@@ -443,6 +504,7 @@ def _build_rain_briefing(shop_id: str) -> DailyBriefing:
             Recommendation(
                 action=ActionType.HOLD,
                 sku="ES-KRIM-CONE",
+                name="Es Krim Wall's Cornetto",
                 qty=QuantityRange(min=0, likely=0, max=0, unit="buah"),
                 confidence=Confidence.MEDIUM,
                 factors=[
