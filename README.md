@@ -56,9 +56,33 @@ Built for the **Google Cloud AI Builder Cup 2026** — Retail & Commerce theme.
 
 - Node.js 20+
 - Python 3.11+
-- Docker & Docker Compose
+- Docker & Docker Compose (optional)
 
-### Frontend (Next.js)
+### 🚀 Quick Setup (Automated)
+
+Run the automated setup script to create a virtual environment, install all dependencies (Python API & Next.js Web), and create `.env` files automatically:
+
+**Windows:**
+```cmd
+setup.bat
+```
+
+**Linux / macOS:**
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+**Cross-platform (Python directly):**
+```bash
+python setup.py
+```
+
+---
+
+### Manual Setup
+
+#### Frontend (Next.js)
 
 ```bash
 cd apps/web
@@ -68,17 +92,17 @@ npm run dev
 # → http://localhost:3000
 ```
 
-### Backend (FastAPI)
+#### Backend (FastAPI)
 
 ```bash
 cd apps/api
 cp .env.example .env
-pip install -e ".[dev]"
+pip install -r requirements.txt  # or pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8080
 # → http://localhost:8080
 ```
 
-### Docker (both)
+#### Docker (both)
 
 ```bash
 docker compose up --build -d
