@@ -29,7 +29,9 @@ export function CaptureCard({ onCapture, isUploading = false }: CaptureCardProps
       }}
     >
       <div
-        className="w-16 h-16 flex items-center justify-center text-4xl rounded-full"
+        className={`w-16 h-16 flex items-center justify-center text-4xl rounded-full ${
+          isUploading ? "scanning" : ""
+        }`}
         style={{ backgroundColor: "var(--color-brand-100)" }}
       >
         📷
@@ -43,27 +45,22 @@ export function CaptureCard({ onCapture, isUploading = false }: CaptureCardProps
       </div>
 
       {isUploading ? (
-        <div className="w-full">
+        <div className="w-full rise-in">
           <div
-            className="h-2 overflow-hidden"
+            className="h-2 sweep-bar w-full"
             style={{
               borderRadius: "var(--radius-badge)",
               backgroundColor: "var(--color-brand-100)",
             }}
-          >
-            <div
-              className="h-full animate-pulse"
-              style={{
-                width: "60%",
-                backgroundColor: "var(--color-brand-600)",
-                borderRadius: "var(--radius-badge)",
-              }}
-            />
-          </div>
-          <p className="text-caption text-ink-600 mt-2">Mengunggah...</p>
+            role="progressbar"
+            aria-label="Mengunggah foto"
+          />
+          <p className="text-caption text-ink-600 mt-2 text-center">
+            Hanga sedang membaca catatan… ✨
+          </p>
         </div>
       ) : (
-        <label className="touch-target text-body font-semibold py-3 px-6 text-surface cursor-pointer transition-colors"
+        <label className="touch-target text-body font-semibold py-3 px-6 text-surface cursor-pointer pressable"
           style={{
             borderRadius: "var(--radius-card)",
             backgroundColor: "var(--color-brand-600)",

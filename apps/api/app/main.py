@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import briefings, extractions, health
+from app.routers import briefings, extractions, health, orders, sales, shops
 
 logger = logging.getLogger(__name__)
 
@@ -78,3 +78,6 @@ app.add_middleware(
 app.include_router(health.router, tags=["Health"])
 app.include_router(briefings.router, prefix="/api/v1", tags=["Briefings"])
 app.include_router(extractions.router, prefix="/api/v1", tags=["Extractions"])
+app.include_router(orders.router, prefix="/api/v1", tags=["Orders"])
+app.include_router(sales.router, prefix="/api/v1", tags=["Sales"])
+app.include_router(shops.router, prefix="/api/v1", tags=["Shops"])

@@ -2,10 +2,17 @@
  * RecommendationCard — The core briefing card.
  *
  * Design: design_system.md §2 — RecommendationCard
- * Layout: action badge → product name → qty range → confidence → factors → rationale → CTA
- * Cards sorted: REORDER → PROMO → HOLD → SKIP; max 5 per briefing.
+ * Layout: action badge → product name → qty range → cost → confidence → factors
+ * → rationale → CTA row. Cards sorted: REORDER → PROMO → HOLD → SKIP; max 5.
+ *
+ * Tapping the WhatsApp CTA also drafts the order via POST /orders so it shows
+ * up on the Pesanan screen (fire-and-forget — the WhatsApp link must never wait).
  */
 
+"use client";
+
+import { api } from "@/lib/api";
+import { DEMO_SHOP_ID } from "@/lib/constants";
 import {
   ACTION_BADGES,
   CONFIDENCE_CONFIG,
@@ -17,9 +24,12 @@ import type { Recommendation } from "@/types";
 
 interface RecommendationCardProps {
   recommendation: Recommendation;
+  scenario?: string;
+  /** Opens the Tanya Hanga sheet with a grounded question about this card. */
+  onAsk?: (question: string) => void;
 }
 
-export function RecommendationCard({ recommendation }: RecommendationCardProps) {
+export function RecommendationCard({ recommendation, scenario, onAsk }: RecommendationCardProps) {
   const {
     action,
     sku,
@@ -40,6 +50,30 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
     .filter((f) => Math.abs(f.weight) >= 0.05)
     .sort((a, b) => Math.abs(b.weight) - Math.abs(a.weight))
     .slice(0, 4);
+
+  // Draft the order server-side when the owner taps the WhatsApp CTA —
+  // fire-and-forget so opening the chat is never delayed.
+  const draftOrder = () => {
+    if (!order_draft) return;
+    api
+      .post(`/orders/shops/${DEMO_SHOP_ID}/orders`, {
+        scenario: scenario ?? "BASELINE",
+        supplier_ref: order_draft.supplier_ref,
+        wa_deep_link: order_draft.wa_deep_link,
+        items: [
+          {
+            sku,
+            name: displayName,
+            qty: qty.likely,
+            unit: qty.unit,
+            est_cost_idr: est_cost_idr ?? order_draft.est_cost_idr,
+          },
+        ],
+      })
+      .catch(() => {
+        // Offline/demo fallback: the WhatsApp link still opens.
+      });
+  };
 
   return (
     <article
@@ -116,6 +150,24 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
       {/* Rationale */}
       <p className="text-body text-ink-600">{rationale_bahasa}</p>
 
+      {/* Tanya Hanga chip — grounded follow-up about this card */}
+      {onAsk && (
+        <button
+          type="button"
+          onClick={() =>
+            onAsk(
+              action === "REORDER"
+                ? `Kenapa pesan ${qty.likely} ${qty.unit} ${displayName}?`
+                : `Kenapa ${displayName} ${ACTION_BADGES[action].label.toLowerCase()}?`
+            )
+          }
+          className="touch-target w-fit text-caption font-semibold px-3 py-1 bg-canvas border border-border text-ink-600"
+          style={{ borderRadius: "var(--radius-badge)" }}
+        >
+          🎤 Tanya
+        </button>
+      )}
+
       {/* WhatsApp CTA */}
       {order_draft && (
         <div className="flex flex-col gap-2 pt-2 border-t border-border">
@@ -126,7 +178,8 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
             href={order_draft.wa_deep_link}
             target="_blank"
             rel="noopener noreferrer"
-            className="touch-target text-body font-semibold text-center py-3 px-4 text-surface transition-colors"
+            onClick={draftOrder}
+            className="touch-target text-body font-semibold text-center py-3 px-4 text-surface pressable"
             style={{
               borderRadius: "var(--radius-card)",
               backgroundColor: "var(--color-brand-600)",

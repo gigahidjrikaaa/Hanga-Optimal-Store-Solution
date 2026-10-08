@@ -44,7 +44,7 @@ export function ScenarioToggle({
             aria-selected={isActive}
             disabled={disabled}
             onClick={() => onSelect(scenario)}
-            className="text-caption whitespace-nowrap px-4 py-2 transition-colors touch-target"
+            className="text-caption whitespace-nowrap px-4 py-2 touch-target pressable"
             style={{
               borderRadius: "var(--radius-chip)",
               backgroundColor: isActive
@@ -56,7 +56,9 @@ export function ScenarioToggle({
               border: isActive
                 ? "none"
                 : "1px solid var(--color-border)",
-              transitionDuration: "var(--duration-fast)",
+              transitionDuration: "var(--duration-normal)",
+              transitionTimingFunction: "var(--ease-spring)",
+              transform: isActive ? "scale(1.04)" : "scale(1)",
               cursor: disabled ? "not-allowed" : "pointer",
               opacity: disabled ? 0.5 : 1,
             }}

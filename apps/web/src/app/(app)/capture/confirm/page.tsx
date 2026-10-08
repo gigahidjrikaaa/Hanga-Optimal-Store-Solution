@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { DEMO_SHOP_ID } from "@/lib/constants";
 import type { ExtractedLine } from "@/types";
 
 // Fallback extracted lines for demonstration
@@ -61,7 +62,7 @@ export default function ConfirmSheetPage() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
       await fetch(
-        `${apiUrl}/extractions/shops/warung-bu-sari/extractions/${extractionId}/confirm`,
+        `${apiUrl}/extractions/shops/${DEMO_SHOP_ID}/extractions/${extractionId}/confirm`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

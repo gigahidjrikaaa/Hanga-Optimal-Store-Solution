@@ -9,6 +9,7 @@
 > **v1.1 changelog (Sep 27, 2026):** added competitive gap analysis (§3); cash-first
 > advisor (cash-budget-feasible order bundles) as P0; "Tanya Hanga" conversational
 > Q&A as P1; perishability-aware risk engine as P0; cold-start prior briefings as P1;
+> owner authentication (Firebase Auth email/Google + demo bypass) as P0;
 > post-hackathon roadmap (§13). Contract bumped to v1.1 in `briefing_spec.md`.
 
 ## 0. Stack (final)
@@ -16,7 +17,7 @@
 | Layer | Technology |
 |---|---|
 | Reasoning & explanation | **Gemma 3** via Gemini API (prompts prototyped in Google AI Studio) |
-| Vision extraction | **Gemini Flash** (multimodal) via Gemini API |
+| Vision extraction | **Gemma 4** (multimodal, AI Studio free tier) via Gemini API — zero-cost extraction; Gemini Flash kept as configured fallback |
 | Frontend | Next.js PWA → **Firebase App Hosting** |
 | Agent backend | **Cloud Run** (container: compute layer + model calls) |
 | Database | **Firestore** (native mode) |
@@ -62,6 +63,7 @@ no incumbent ledger app is built for.
 ## 4. Goals / Non-goals
 
 **Goals**
+- **Owner sign-in (v1.1):** Firebase Auth (email/password + Google) guarding the app, with a one-tap demo session so the seeded demo and stage flow never depend on a live project; the API verifies ID tokens and enforces shop ownership
 - Notebook photo → structured sales data in under 60s (with human confirm step)
 - Daily briefing the owner understands in under 30s, in Bahasa Indonesia, with visible reasoning
 - One-tap restock order draft via WhatsApp deep link
@@ -73,7 +75,7 @@ no incumbent ledger app is built for.
 - POS replacement, payments, bookkeeping
 - Real wholesaler API integration (WhatsApp deep link IS the integration)
 - Native app / Play Store (PWA now; TWA on roadmap)
-- Multi-shop accounts, real multi-user auth
+- Multi-shop accounts (auth is per-owner; one shop per owner for now)
 - Live WhatsApp Business API / push notifications (deep links only, for now)
 
 ## 5. User stories (P0)
@@ -84,11 +86,13 @@ no incumbent ledger app is built for.
 5. As Bu Sari, I flip "Lebaran +14 hari" and see recommendations invert, so I can plan the season.
 6. **(v1.1)** As Bu Sari, I set today's cash (or say it) and the briefing shows which orders fit, what it leaves me, and what to postpone until cash comes in — so I never order more than my drawer can pay for.
 7. **(v1.1)** As Bu Sari, I press "Tanya" on a card and ask why the quantity is what it is, by voice, and hear a plain-Bahasa answer grounded in the same numbers on screen.
+8. **(v1.1)** As Bu Sari, I sign in once with my email or Google (or one tap in demo mode), and only I can see my shop's data.
 
 ## 6. Features
 
 | Priority | Feature | Demo arc |
 |---|---|---|
+| P0 | **Owner auth (v1.1):** /masuk screen — Firebase Auth email/Google, animated "warung buka pagi" scene with rolling-shutter success; FastAPI verifies Bearer ID tokens + shop-ownership guard; one-tap demo session bypass | Trust from the first screen |
 | P0 | Cold-start interview (voice/tap, 2 min) — now captures today's available cash | Establishes shop profile + budget |
 | P0 | Notebook photo → SKU extraction (Gemini Flash) + ConfirmSheet | Wow moment #1 |
 | P0 | Daily Briefing screen (movers, risks, recommendations, factor trace) | Core product |
@@ -129,8 +133,8 @@ the compute layer is stable.
 ## 9. Firestore data model (summary)
 
 ```
-shops/{shopId}                     profile, supplier ref, cold-start answers,
-                                   cash_available_idr (v1.1 — today's spendable cash)
+shops/{shopId}                     profile, supplier ref, owner_uid (v1.1 — Firebase UID),
+                                   cold-start answers, cash_available_idr (v1.1 — today's spendable cash)
 shops/{shopId}/sales/{date}        daily per-SKU quantities (from extraction)
 shops/{shopId}/extractions/{id}    photo ref, raw OCR JSON, confirmed lines, confidence
 shops/{shopId}/briefings/{date}    DailyBriefing JSON per scenario, incl. budget block
@@ -150,15 +154,16 @@ factors/{date}                     holiday/event/weather factor records
 | Risk | Mitigation |
 |---|---|
 | Gemma JSON output unreliable | Pydantic validation + 1 retry with error appended; template-briefing fallback |
-| Vision accuracy poor on handwriting | Test Gemma 3 vs Gemini Flash on 20 labeled photos week 1; pick winner; ConfirmSheet absorbs errors |
+| Vision accuracy poor on handwriting | **Gemma 4 (free tier) on 20 labeled photos week 1**; confirm the exact model ID via `client.models.list()`; ConfirmSheet absorbs errors; Gemini Flash is the configured fallback (`HANGA_VISION_MODEL`) |
 | API quota exhaustion during judging | Fixtures + seeded mode; never call live APIs on stage |
 | Camera/API fails live | Fallback mode one toggle away (3s long-press on logo) |
 | **Venue noise breaks voice demo (v1.1)** | Tanya Hanga always shows a text-input fallback; rehearse both paths |
+| **Auth blocker on stage (v1.1)** | One-tap demo session is always on the /masuk screen; API demo bypass (`HANGA_DEMO_MODE`) is default-on; rehearse the live Firebase path separately |
 | **Budget numbers inconsistent on stage (v1.1)** | Seeded invariants (`committed ≤ cash`, deferred lists match) covered by tests; budget arithmetic lives in code, never in Gemma |
 | Scope creep | Kanban discipline: demo-critical cards only; v1.1 additions sized ≤ 3 dev-days each |
 
 ## 12. Rule compliance (self-check)
-- ✅ Models: Gemma 3 + Gemini Flash — both explicitly allowed
+- ✅ Models: Gemma 3 (reasoning) + Gemma 4 (vision, free tier) — Gemini/Gemma family as required; Gemini Flash configured as fallback
 - ✅ Deployment: Firebase + Cloud Run — mandated targets
 - ✅ Fresh build within hackathon window; one team, one theme
 - ✅ Materials in English; deck as PDF; 3-min video; public GitHub repo

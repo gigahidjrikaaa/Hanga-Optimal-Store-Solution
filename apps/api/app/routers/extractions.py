@@ -7,11 +7,12 @@ Uses Gemini Flash (multimodal) for vision extraction.
 
 import logging
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
 from app.config import settings
+from app.dependencies.auth import Principal, ensure_shop_access, get_current_principal
 from app.schemas.extraction import (
     ConfirmSheetUpdate,
     ExtractedLine,
@@ -84,6 +85,7 @@ def _create_demo_extraction(shop_id: str, extraction_id: str) -> Extraction:
 async def create_extraction(
     shop_id: str,
     photo: UploadFile,
+    principal: Principal = Depends(get_current_principal),
 ) -> Extraction:
     """
     Upload a notebook photo and trigger SKU extraction via Gemini Flash.
@@ -91,6 +93,7 @@ async def create_extraction(
     In demo mode, simulates model vision extraction with realistic Indonesian notebook lines.
     In live mode, uses Gemini Flash multimodal API.
     """
+    ensure_shop_access(principal, shop_id)
     extraction_id = uuid.uuid4().hex[:8]
 
     # Read uploaded file bytes
@@ -136,8 +139,11 @@ async def create_extraction(
 async def get_extraction(
     shop_id: str,
     extraction_id: str,
+    principal: Principal = Depends(get_current_principal),
 ) -> Extraction:
     """Retrieve an extraction record by ID."""
+    ensure_shop_access(principal, shop_id)
+
     if extraction_id in _DEMO_EXTRACTIONS:
         return _DEMO_EXTRACTIONS[extraction_id]
 
@@ -156,10 +162,14 @@ async def confirm_extraction(
     shop_id: str,
     extraction_id: str,
     body: ConfirmSheetUpdate,
+    principal: Principal = Depends(get_current_principal),
 ) -> Extraction:
     """
-    Accept user-corrected extraction lines from the ConfirmSheet UI.
+    Accept user-corrected extraction lines from the ConfirmSheet UI and write
+    the confirmed lines back into the shop's sales history (spec §6).
     """
+    ensure_shop_access(principal, shop_id)
+
     extraction = _DEMO_EXTRACTIONS.get(extraction_id)
     if not extraction:
         extraction = _create_demo_extraction(shop_id, extraction_id)
@@ -168,6 +178,26 @@ async def confirm_extraction(
     extraction.status = ExtractionStatus.CONFIRMED
     extraction.confirmed_at = datetime.now()
     _DEMO_EXTRACTIONS[extraction_id] = extraction
+
+    # Write-back: confirmed notebook lines become daily sales records. The
+    # demo store uses the pinned demo date; live mode uses today.
+    try:
+        from app.services.sales import record_confirmed_sales
+
+        sales_date = (
+            date.fromisoformat(settings.demo_date)
+            if settings.demo_mode
+            else datetime.now().date()
+        )
+        recorded = await record_confirmed_sales(shop_id, body.lines, sales_date)
+        logger.info(
+            "Extraction %s confirmed: %d lines, %d SKUs recorded as sales",
+            extraction_id,
+            len(body.lines),
+            len(recorded),
+        )
+    except Exception as sales_err:
+        logger.warning("Sales write-back failed for %s: %s", extraction_id, sales_err)
 
     logger.info("Extraction %s confirmed with %d lines", extraction_id, len(body.lines))
     return extraction

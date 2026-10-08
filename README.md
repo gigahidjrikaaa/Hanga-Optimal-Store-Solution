@@ -42,10 +42,12 @@ Built for the **Google Cloud AI Builder Cup 2026** — Retail & Commerce theme.
 │       └── Dockerfile    # Cloud Run container
 │
 ├── docs/                 # Specifications
-│   ├── briefing_spec.md  # Data contract & interaction spec
+│   ├── briefing_spec.md  # Data contract & interaction spec (v1.1)
 │   ├── prd_hanga.md      # Product Requirements Document
-│   └── design_system.md  # Design tokens, components, screens
+│   ├── design_system.md  # Design tokens, components, screens
+│   └── DEPLOY.md         # App Hosting + Cloud Run deployment guide
 │
+├── TODO.md               # Working checklist (🔑 Gemma 4 key blocker on top)
 ├── docker-compose.yml    # Local dev environment
 └── .gitignore            # Monorepo ignores
 ```
@@ -85,6 +87,13 @@ docker compose up --build -d
 # Frontend → http://localhost:3000
 # Backend  → http://localhost:8080
 ```
+
+### Deploy
+
+See [docs/DEPLOY.md](docs/DEPLOY.md) — Cloud Run (API) + Firebase App Hosting
+(web) + one-command demo seeding. Before enabling live model calls, resolve
+the 🔑 block in [TODO.md](TODO.md) (real API key → `scripts/verify_models.py`
+→ confirmed Gemma 4 vision model ID).
 
 ## Stack
 

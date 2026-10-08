@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # --- Gemini / Gemma ---
     gemini_api_key: str = ""
     gemma_model: str = "gemma-3-27b-it"
+    # Multimodal Gemma 4 via AI Studio free tier (confirm exact ID with
+    # `client.models.list()`; override with HANGA_VISION_MODEL).
+    vision_model: str = "gemma-4-27b-it"
     gemini_flash_model: str = "gemini-2.0-flash"
 
     # --- Demo Mode ---

@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CaptureCard } from "@/components/capture-card";
+import { DEMO_SHOP_ID } from "@/lib/constants";
 
 export default function CapturePage() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function CapturePage() {
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
       const response = await fetch(
-        `${apiUrl}/extractions/shops/warung-bu-sari/extractions`,
+        `${apiUrl}/extractions/shops/${DEMO_SHOP_ID}/extractions`,
         {
           method: "POST",
           body: formData,

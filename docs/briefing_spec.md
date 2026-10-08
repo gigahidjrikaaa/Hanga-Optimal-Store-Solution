@@ -116,6 +116,11 @@ the UI maps each to an icon + label.
     never silent, and never demotes the item to SKIP.**
   - `budget.note_bahasa`: ≤120 chars, plain Bahasa, explains fit and deferrals.
   - Demo invariant: `committed_idr ≤ cash_available_idr` and `remaining_idr ≥ 0`.
+  - **Cash parameter (v1.1):** the briefing endpoint accepts
+    `?cash_available_idr=<int>` — the order bundle is re-fitted in pure code
+    (§6.1) for any cash value, on top of authored or computed briefings.
+    Deferral is always visible: every card carrying a `CASH_TIGHT` chip appears
+    in `budget.deferred_skus`, and vice versa.
 - **Scenario toggle** re-runs compute with scenario context injected + fresh Gemma call —
   except demo mode, where all scenarios are pre-computed and stored in Firestore.
 - **Ordering:** cards sorted REORDER → PROMO → HOLD → SKIP (enforced client-side);

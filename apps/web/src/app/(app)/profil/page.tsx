@@ -7,10 +7,20 @@
 
 "use client";
 
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { HangaLogo } from "@/components/hanga-logo";
+import { useAuth } from "@/lib/auth-context";
 
 export default function ProfilPage() {
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace("/masuk");
+  };
+
   return (
     <AppShell>
       <div className="flex flex-col gap-5 py-5 px-4">
@@ -18,7 +28,7 @@ export default function ProfilPage() {
         <div className="flex items-center justify-between border-b border-border/60 pb-3">
           <HangaLogo variant="compact" size="sm" />
           <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800">
-            v1.0 Demo
+            v1.1 Demo
           </span>
         </div>
 
@@ -34,10 +44,14 @@ export default function ProfilPage() {
             👩‍💼
           </div>
           <div className="flex flex-col">
-            <h2 className="text-heading text-ink-900 font-bold">Bu Sari</h2>
+            <h2 className="text-heading text-ink-900 font-bold">
+              {user?.displayName ?? "Bu Sari"}
+            </h2>
             <p className="text-body text-ink-600">Warung Berkah Jaya</p>
             <p className="text-caption text-neutral-400 mt-0.5">
-              Kelontong · Pasar Minggu, Jakarta Selatan
+              {user?.isDemo
+                ? "Sesi Mode Demo — data contoh"
+                : (user?.email ?? "Pemilik warung")}
             </p>
           </div>
         </div>
@@ -112,13 +126,22 @@ export default function ProfilPage() {
         </div>
 
         {/* Cold Start Redo */}
-        <div className="pt-2">
+        <div className="pt-2 flex flex-col gap-3">
           <a
             href="/onboarding"
             className="touch-target w-full py-3 px-4 rounded-xl border border-border bg-surface hover:bg-canvas text-ink-900 font-semibold text-body flex items-center justify-center gap-2 transition-colors shadow-sm"
           >
             <span>🔄</span> Ulangi Interview Awal (Cold Start)
           </a>
+
+          {/* Sign out */}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="touch-target w-full py-3 px-4 rounded-xl border border-danger-600/30 bg-surface hover:bg-danger-100 text-danger-600 font-semibold text-body flex items-center justify-center gap-2 transition-colors"
+          >
+            <span>🚪</span> Keluar
+          </button>
         </div>
       </div>
     </AppShell>

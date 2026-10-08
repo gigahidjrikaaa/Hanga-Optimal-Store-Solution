@@ -16,13 +16,14 @@ export function RiskBanner({ risks }: RiskBannerProps) {
 
   return (
     <div className="flex flex-col gap-2 px-4">
-      {risks.map((risk) => {
+      {risks.map((risk, index) => {
         const isDanger = risk.severity >= 2;
         return (
           <div
             key={`${risk.type}-${risk.sku}`}
-            className="p-3 flex items-start gap-3"
+            className="p-3 flex items-start gap-3 slide-down-in"
             style={{
+              animationDelay: `${index * 90}ms`,
               borderRadius: "var(--radius-card)",
               backgroundColor: isDanger
                 ? "var(--color-danger-100)"
@@ -32,8 +33,14 @@ export function RiskBanner({ risks }: RiskBannerProps) {
                 : "var(--color-warn-600)",
             }}
           >
-            <span className="text-xl" aria-hidden="true">
+            <span className="text-xl relative" aria-hidden="true">
               {risk.type === "WASTE_RISK" ? "🗑️" : "⚠️"}
+              {isDanger && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger-600 animate-pulse"
+                  aria-hidden="true"
+                />
+              )}
             </span>
             <div>
               <p className="text-body font-semibold">

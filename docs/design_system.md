@@ -54,9 +54,37 @@ over cash (`remaining_idr < 0`, live mode only) → `danger/100` tint.
 - 4pt grid: `4 · 8 · 12 · 16 · 20 · 24 · 32`
 - Radius: chips `8` · cards `12` · sheets `16` · badges `full`
 - Elevation: cards `0 1 3 rgba(16,24,40,.10)` · sheets `0 -4 16 rgba(16,24,40,.14)`
-- Motion: 150–250ms ease-out; skeleton shimmer for any load > 400ms
+- Motion: 150–250ms ease-out; skeleton shimmer for any load > 400ms; spring
+  easing `cubic-bezier(.34,1.56,.64,1)` for playful moments (chips, pops)
+
+**Motion grammar (v1.1, globals.css §9)** — one vocabulary across the app,
+all CSS-only and fully disabled under `prefers-reduced-motion`:
+- **Splash** — full "warung buka pagi" scene (sun rise, breathing logo,
+  sweep bar), holds ~250ms then fades 400ms (ProtectedRoute)
+- **Route entry** — `(app)/template.tsx` gives every screen a 260ms rise-in
+- **Choreography** — briefing content staggers: risk banners drop in
+  (slide-down, 90ms apart), cards rise in (70ms apart), mover rows follow
+  (60ms apart) — reading order guides the eye
+- **Feedback** — `pressable` scale-down on every tappable surface; scenario
+  chips spring-scale when active; CTA spinners; sweep-bar for indeterminate
+  progress (upload, splash); scanning halo on the camera during capture
+- **Data motion** — budget IDR figures count up/settle on re-fit
+  (`useCountUp`); mover sparklines draw themselves in (stroke-dashoffset)
+- **Signature moments** — the rolling-shutter success sweep on sign-in;
+  the rising sun behind the awning on /masuk and the splash
 
 ## 2. Components
+
+**LoginScene** (`/masuk`, P0, v1.1) — "warung opens at dawn": dawn-sky backdrop
+(warm horizon glow under a brand-tinted sky), drifting soft blobs, the sun rising
+behind a striped warung **awning** fixed to the screen bottom. Card entrance is
+staggered `rise-in` (60–90ms delays). Contents top→bottom: brand logo → time-aware
+greeting → card (Masuk/Daftar segmented toggle with sliding thumb → email/password
+fields with show/hide and length hint → primary CTA with spinner → divider →
+"Lanjut dengan Google" → "🧪 Coba Mode Demo" brand-tinted CTA). **Success moment:**
+the rolling shutter — a ridged brand-green overlay sweeps up past the camera
+(`shutter-sweep` 1.05s) revealing the app behind it; navigation fires mid-sweep.
+All animation is CSS-only and disabled under `prefers-reduced-motion`.
 
 **AppShell** — bottom nav, 4 tabs: `Beranda · Stok · Pesanan · Profil`. Active tab:
 brand/600 icon + label. Max width 480px centered on desktop.
@@ -116,7 +144,9 @@ tanggal X." Shown when PWA serves cached briefing and Firestore is unreachable.
 
 All components require: default · loading (skeleton) · empty · error states.
 
-## 3. Screen inventory (5 screens = the demo)
+## 3. Screen inventory (the demo)
+0. **Masuk (v1.1)** — LoginScene: sign-in / sign-up / Google / demo; public route,
+   all app routes behind it
 1. **Onboarding/Cold-start** — voice-or-tap 4-question interview (incl. "Berapa kas
    hari ini?" — v1.1)
 2. **Capture** — notebook photo upload → Firebase Storage
