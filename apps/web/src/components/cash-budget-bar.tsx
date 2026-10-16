@@ -67,13 +67,25 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
       >
         {/* Input row: cash chips + slider */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-caption font-semibold text-brand-800">
-            💵 Kas hari ini
-          </span>
-          <span className="text-numeric text-caption text-ink-900">
+          <div className="flex items-center gap-1.5">
+            <span className="text-caption font-semibold text-brand-800">
+              💵 Kas hari ini
+            </span>
+            <span
+              title="Uang tunai di kasir yang siap dibelanjakan untuk stok hari ini"
+              className="text-xs text-brand-600 bg-brand-200/60 rounded-full px-1.5 py-0.2 cursor-help font-bold"
+            >
+              ?
+            </span>
+          </div>
+          <span className="text-numeric text-caption font-bold text-ink-900">
             {formatIDR(effectiveCash)}
           </span>
         </div>
+
+        <p className="text-xs text-ink-600">
+          💡 Geser slider atau pilih cepat untuk menyesuaikan rekomendasi pesanan dengan modal Anda:
+        </p>
 
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Kas cepat pilih">
           {QUICK_CHIPS.map((chip) => {
@@ -85,10 +97,11 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
                 disabled={disabled}
                 onClick={() => onChange(chip)}
                 aria-pressed={isActive}
+                title={`Pilih nominal kas ${formatIDR(chip)}`}
                 className={`text-caption px-2.5 py-1 font-semibold border pressable disabled:opacity-50 ${
                   isActive
-                    ? "bg-brand-600 text-surface border-brand-600"
-                    : "bg-surface text-ink-600 border-border"
+                    ? "bg-brand-600 text-surface border-brand-600 shadow-sm"
+                    : "bg-surface text-ink-600 border-border hover:border-brand-600/40"
                 }`}
                 style={{
                   borderRadius: "var(--radius-badge)",
@@ -101,34 +114,42 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
           })}
         </div>
 
-        <input
-          type="range"
-          min={SLIDER_MIN}
-          max={SLIDER_MAX}
-          step={SLIDER_STEP}
-          value={effectiveCash}
-          disabled={disabled}
-          onChange={(e) => onChange(Number(e.target.value))}
-          aria-label="Atur kas hari ini"
-          className="w-full accent-brand-600 disabled:opacity-50"
-        />
+        <div className="flex flex-col gap-1">
+          <input
+            type="range"
+            min={SLIDER_MIN}
+            max={SLIDER_MAX}
+            step={SLIDER_STEP}
+            value={effectiveCash}
+            disabled={disabled}
+            onChange={(e) => onChange(Number(e.target.value))}
+            aria-label="Atur kas hari ini"
+            title="Geser untuk menyesuaikan modal kasir"
+            className="w-full accent-brand-600 disabled:opacity-50 cursor-pointer"
+          />
+          <div className="flex justify-between text-[10px] text-ink-600 font-medium">
+            <span>{shortIDR(SLIDER_MIN)}</span>
+            <span>Rp 1,5jt</span>
+            <span>{shortIDR(SLIDER_MAX)}</span>
+          </div>
+        </div>
 
         {/* Fit row */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-1">
           <span className="text-numeric text-caption text-ink-600">
-            Terpakai {formatIDR(committed)}
+            Terpakai: <strong className="text-ink-900">{formatIDR(committed)}</strong>
           </span>
           <span
             className={`text-numeric text-caption font-semibold ${
               overCash ? "text-danger-600" : "text-brand-800"
             }`}
           >
-            Sisa {formatIDR(remaining)}
+            Sisa: {formatIDR(remaining)}
           </span>
         </div>
 
         <div
-          className="h-1.5 w-full overflow-hidden"
+          className="h-2 w-full overflow-hidden"
           style={{ backgroundColor: "var(--color-border)", borderRadius: "9999px" }}
           role="progressbar"
           aria-valuenow={fitPct}
@@ -149,24 +170,30 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
         </div>
 
         {budget.deferred_skus.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {budget.deferred_skus.map((sku) => (
-              <span
-                key={sku}
-                className="text-caption px-2 py-0.5"
-                style={{
-                  borderRadius: "var(--radius-chip)",
-                  backgroundColor: "var(--color-warn-100)",
-                  color: "var(--color-warn-600)",
-                }}
-              >
-                ⏳ {names.get(sku) ?? sku} — besok
-              </span>
-            ))}
+          <div className="flex flex-col gap-1 pt-1 border-t border-border/50">
+            <span className="text-xs text-warn-700 font-semibold flex items-center gap-1">
+              <span>⏳</span> Ditunda ke jadwal besok (kas dihemat):
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {budget.deferred_skus.map((sku) => (
+                <span
+                  key={sku}
+                  title="Pesanan ini ditunda ke esok hari agar uang kas mencukupi kebutuhan pokok prioritas"
+                  className="text-caption px-2 py-0.5 cursor-help font-medium"
+                  style={{
+                    borderRadius: "var(--radius-chip)",
+                    backgroundColor: "var(--color-warn-100)",
+                    color: "var(--color-warn-600)",
+                  }}
+                >
+                  {names.get(sku) ?? sku}
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
-        <span className="text-caption text-ink-600">{budget.note_bahasa}</span>
+        <p className="text-caption text-ink-600 mt-0.5">{budget.note_bahasa}</p>
       </div>
     </div>
   );

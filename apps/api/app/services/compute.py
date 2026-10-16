@@ -65,6 +65,10 @@ class CatalogEntry:
     festive: bool = False  # LEBARAN-sensitive (sirup, biskuit, tepung kue)
     rain_boom: bool = False  # hot drinks / noodles on rainy days
     payday_boom: bool = False  # staples & premium items after payday
+    pack_unit: str = "satuan"  # wholesale pack name (dus, karton, renceng, bal, etc.)
+    pack_size: float = 1.0  # units per wholesale pack
+    moq: int = 1  # minimum order packs
+    target_service_level: float = 0.95  # Cycle service level target (0.80 - 0.98)
 
 
 @dataclass
@@ -149,6 +153,7 @@ def _per_sku_stats(
     days = sorted(snapshot.sales)
     last7 = days[-7:]
     prev7 = days[-14:-7]
+    last14 = days[-14:]
 
     def adj_avg(window: list[date], sku: str) -> float:
         vals = [
@@ -156,6 +161,13 @@ def _per_sku_stats(
             for d in window
         ]
         return sum(vals) / max(len(vals), 1)
+
+    def std_dev(window: list[date], sku: str, mean: float) -> float:
+        if len(window) < 2:
+            return max(mean * 0.2, 0.1)
+        vals = [snapshot.sales[d].get(sku, 0.0) for d in window]
+        var = sum((v - mean) ** 2 for v in vals) / (len(vals) - 1)
+        return math.sqrt(max(var, 0.0))
 
     stats: dict[str, dict] = {}
     for sku, entry in snapshot.catalog.items():
@@ -166,11 +178,19 @@ def _per_sku_stats(
         delta = (avg7 - avg_prev) / avg_prev if avg_prev > 0 else 0.0
         stock = float(snapshot.stock_units.get(sku, 0.0))
         cover = stock / avg_daily if avg_daily > 0 else 0.0
+        daily_std = std_dev(last14, sku, avg_daily)
+
+        csl = getattr(entry, "target_service_level", 0.95)
+        z_csl = 1.645 if csl >= 0.92 else (1.28 if csl >= 0.88 else 1.04)
+        safety_stock = z_csl * daily_std * math.sqrt(LEAD_TIME_DAYS)
+
         stats[sku] = {
             "entry": entry,
             "qty_7d": qty_7d,
             "delta_7d": delta,
             "avg_daily": avg_daily,
+            "std_daily": daily_std,
+            "safety_stock": safety_stock,
             "stock": stock,
             "cover_days": cover,
             "obs_days": sum(1 for d in days if snapshot.sales[d].get(sku, 0) > 0),
@@ -263,7 +283,7 @@ def compute_outputs(snapshot: ShopSnapshot) -> ComputeResult:
     risks.sort(key=lambda r: -r.severity)
     risks = risks[:4]
 
-    # --- Reorder candidates -------------------------------------------------
+    # --- Reorder candidates (Stochastic safety stock + Wholesale pack sizing) ---
     max_avg = max((row["avg_daily"] for row in stats.values()), default=0.0) or 1.0
     candidates: list[dict] = []
     for sku, row in stats.items():
@@ -275,33 +295,59 @@ def compute_outputs(snapshot: ShopSnapshot) -> ComputeResult:
         if eff_daily <= 0:
             continue
         cover_eff = row["stock"] / eff_daily if eff_daily > 0 else 0.0
-        target_qty = eff_daily * TARGET_COVER_DAYS
+        target_qty = eff_daily * TARGET_COVER_DAYS + row.get("safety_stock", 0.0)
         needed = target_qty - row["stock"]
         urgency = max(0.0, min(1.0, 1 - cover_eff / TARGET_COVER_DAYS))
         velocity_norm = min(row["avg_daily"] / max_avg, 1.0)
         priority = urgency * (0.6 + 0.4 * velocity_norm) \
             + (0.25 if entry.perishable else 0.0) + max(factor_pull, 0.0)
 
+        pack_size = max(1.0, float(getattr(entry, "pack_size", 1.0)))
+        pack_unit = getattr(entry, "pack_unit", entry.unit)
+        moq = max(1, int(getattr(entry, "moq", 1)))
+
         if needed >= 1:
-            likely = int(math.ceil(needed))
+            if pack_size > 1.0:
+                packs = max(moq, int(math.ceil(needed / pack_size)))
+                likely = int(packs * pack_size)
+                min_packs = max(moq, max(1, int(math.floor(packs * 0.8))))
+                max_packs = max(packs, int(math.ceil(packs * 1.25)))
+                min_qty = int(min_packs * pack_size)
+                max_qty = int(max_packs * pack_size)
+                pack_display = f"{packs} {pack_unit} ({likely} {entry.unit})"
+                hint = f"Disesuaikan ke {packs} {pack_unit} ({likely} {entry.unit}) sesuai standar grosir."
+            else:
+                likely = int(math.ceil(needed))
+                min_qty = max(1, int(math.ceil(needed * 0.75)))
+                max_qty = int(math.ceil(needed * 1.3))
+                pack_display = f"{likely} {entry.unit}"
+                hint = f"Target stok aman {TARGET_COVER_DAYS} hari termasuk cadangan lonjakan pembeli."
+
             candidates.append({
                 "entry": entry, "row": row, "factors": factors,
                 "priority": priority, "likely": likely,
-                "min": max(1, int(math.ceil(needed * 0.75))),
-                "max": int(math.ceil(needed * 1.3)),
+                "min": min_qty, "max": max_qty,
                 "est_cost": likely * entry.unit_cost_idr,
                 "cover": cover_eff,
+                "pack_display": pack_display,
+                "hint_bahasa": hint,
+                "pack_size": pack_size,
+                "pack_unit": pack_unit,
+                "moq": moq,
+                "packs": packs if pack_size > 1.0 else likely,
             })
         elif cover_eff >= 5 and row["avg_daily"] >= 0.2:
             candidates.append({
                 "entry": entry, "row": row, "factors": factors,
                 "priority": priority - 1.0, "hold": True,
                 "cover": cover_eff,
+                "pack_display": f"0 {entry.unit}",
+                "hint_bahasa": f"Stok masih cukup ±{int(cover_eff)} hari. Tahan pesanan untuk hemat modal kas.",
             })
 
     candidates.sort(key=lambda c: -c["priority"])
 
-    # --- Cash-feasible bundle (greedy by priority, code-only — spec §6.1) ---
+    # --- Cash-feasible bundle (Knapsack heuristic with pack step-down, code-only) ---
     committed = 0
     funded: list[Recommendation] = []
     deferred: list[dict] = []
@@ -311,13 +357,41 @@ def compute_outputs(snapshot: ShopSnapshot) -> ComputeResult:
         if committed + cand["est_cost"] <= snapshot.cash_available_idr and len(funded) < 4:
             committed += cand["est_cost"]
             funded.append(_funded_recommendation(cand, snapshot, coverage_days))
+        elif len(funded) < 4:
+            # Check step-down to fit partial knapsack
+            pack_sz = cand.get("pack_size", 1.0)
+            u_cost = cand["entry"].unit_cost_idr
+            curr_p = cand.get("packs", cand["likely"])
+            min_p = cand.get("moq", 1)
+            stepped = False
+            if curr_p > min_p:
+                for p in range(curr_p - 1, min_p - 1, -1):
+                    q = int(p * pack_sz) if pack_sz > 1.0 else p
+                    cost_p = q * u_cost
+                    if committed + cost_p <= snapshot.cash_available_idr and cost_p > 0:
+                        cand_step = dict(cand)
+                        cand_step["likely"] = q
+                        cand_step["min"] = max(1, int(q * 0.75))
+                        cand_step["max"] = q
+                        cand_step["est_cost"] = cost_p
+                        if pack_sz > 1.0:
+                            cand_step["pack_display"] = f"{p} {cand['pack_unit']} ({q} {cand['entry'].unit})"
+                            cand_step["hint_bahasa"] = f"Disesuaikan menjadi {p} {cand['pack_unit']} agar pas dengan sisa modal kas."
+                        else:
+                            cand_step["pack_display"] = f"{q} {cand['entry'].unit}"
+                            cand_step["hint_bahasa"] = "Jumlah pesanan disesuaikan agar pas dengan sisa kas hari ini."
+                        committed += cost_p
+                        funded.append(_funded_recommendation(cand_step, snapshot, coverage_days))
+                        stepped = True
+                        break
+            if not stepped:
+                deferred.append(cand)
         else:
             deferred.append(cand)
 
     signals = [_hold_recommendation(c) for c in candidates if c.get("hold")][:1]
 
     # Deferred cards: as many as the 5-card cap allows, highest priority first.
-    # budget.deferred_skus stays in lockstep with the visible CASH_TIGHT cards.
     deferred_slots = max(0, MAX_RECOMMENDATIONS - len(funded) - len(signals))
     deferred_cards = deferred[:deferred_slots]
 
@@ -437,27 +511,37 @@ def _funded_recommendation(
     cand: dict, snapshot: ShopSnapshot, coverage_days: int
 ) -> Recommendation:
     entry: CatalogEntry = cand["entry"]
+    pack_disp = cand.get("pack_display")
+    hint = cand.get("hint_bahasa")
+    order_text = f"Halo%20Toko%20Grosir%20Jaya,%20pesan%20{entry.name.replace(' ', '%20')}%20"
+    if pack_disp:
+        order_text += pack_disp.replace(' ', '%20') + "."
+    else:
+        order_text += f"{cand['likely']}%20{entry.unit}."
+
     return Recommendation(
         action=ActionType.REORDER,
         sku=entry.sku,
         name=entry.name,
         est_cost_idr=cand["est_cost"],
-        qty=QuantityRange(min=cand["min"], likely=cand["likely"],
-                          max=cand["max"], unit=entry.unit),
+        qty=QuantityRange(
+            min=cand["min"],
+            likely=cand["likely"],
+            max=cand["max"],
+            unit=entry.unit,
+            pack_display=pack_disp,
+        ),
         confidence=_confidence_for(coverage_days, cand["row"]["obs_days"]),
         factors=cand["factors"],
         rationale_bahasa=(
             f"Sisa stok ±{max(int(cand['cover']), 0)} hari. "
             f"Pesan {cand['likely']} {entry.unit} sekarang agar tidak kehabisan."
         )[:160],
+        hint_bahasa=hint,
         order_draft=OrderDraft(
             supplier_ref="TOKO GROSIR JAYA",
             est_cost_idr=cand["est_cost"],
-            wa_deep_link=(
-                f"https://wa.me/6281234567890?text="
-                f"Halo%20Toko%20Grosir%20Jaya,%20pesan%20"
-                f"{entry.name.replace(' ', '%20')}%20{cand['likely']}%20{entry.unit}."
-            ),
+            wa_deep_link=f"https://wa.me/6281234567890?text={order_text}",
         ),
     )
 
@@ -474,19 +558,26 @@ def _deferred_recommendation(cand: dict, coverage_days: int) -> Recommendation:
     confidence = _confidence_for(coverage_days, cand["row"]["obs_days"])
     if confidence == Confidence.HIGH:
         confidence = Confidence.MEDIUM
+    pack_disp = cand.get("pack_display")
     return Recommendation(
         action=ActionType.REORDER,
         sku=entry.sku,
         name=entry.name,
         est_cost_idr=cand["est_cost"],
-        qty=QuantityRange(min=cand["min"], likely=cand["likely"],
-                          max=cand["max"], unit=entry.unit),
+        qty=QuantityRange(
+            min=cand["min"],
+            likely=cand["likely"],
+            max=cand["max"],
+            unit=entry.unit,
+            pack_display=pack_disp,
+        ),
         confidence=confidence,
         factors=factors,
         rationale_bahasa=(
             f"Kas hari ini dipakai pesanan prioritas. "
             f"Pesan {cand['likely']} {entry.unit} besok pagi setelah uang masuk."
         )[:160],
+        hint_bahasa=f"Kebutuhan modal ±{cand['est_cost']:,} IDR melebihi sisa kas. Ditunda rapi ke jadwal kulakan berikutnya.",
         order_draft=None,
     )
 
@@ -497,13 +588,14 @@ def _hold_recommendation(cand: dict) -> Recommendation:
         action=ActionType.HOLD,
         sku=entry.sku,
         name=entry.name,
-        qty=QuantityRange(min=0, likely=0, max=0, unit=entry.unit),
+        qty=QuantityRange(min=0, likely=0, max=0, unit=entry.unit, pack_display=f"0 {entry.unit}"),
         confidence=Confidence.MEDIUM,
         factors=cand["factors"],
         rationale_bahasa=(
             f"Stok {entry.name} masih cukup ±{int(cand['cover'])} hari — "
             f"tahan pesanan dulu."
         )[:160],
+        hint_bahasa=cand.get("hint_bahasa") or "Stok di rak masih melimpah. Simpan kas Anda untuk barang yang lebih cepat berputar.",
         order_draft=None,
     )
 
@@ -564,6 +656,7 @@ def refit_budget(briefing: DailyBriefing, cash: int) -> DailyBriefing:
                     f"Pesan {rec.qty.likely} {rec.qty.unit} sekarang: "
                     f"kas cukup dan {rec.name or rec.sku} sedang dicari."
                 )[:160]
+                rec.hint_bahasa = f"Alokasi modal kas kini mencukupi untuk memesan {rec.name or rec.sku}."
                 if rec.confidence == Confidence.LOW:
                     rec.confidence = Confidence.MEDIUM
         else:
@@ -574,6 +667,7 @@ def refit_budget(briefing: DailyBriefing, cash: int) -> DailyBriefing:
                     f"Kas hari ini dipakai pesanan prioritas. "
                     f"Pesan {rec.qty.likely} {rec.qty.unit} besok pagi setelah uang masuk."
                 )[:160]
+                rec.hint_bahasa = "Kas hari ini diprioritaskan untuk barang pokok lain. Pesanan ini ditunda ke jadwal berikutnya."
                 if rec.confidence == Confidence.HIGH:
                     rec.confidence = Confidence.MEDIUM
 

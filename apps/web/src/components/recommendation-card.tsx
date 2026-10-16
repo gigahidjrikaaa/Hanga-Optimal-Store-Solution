@@ -40,10 +40,18 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
     factors,
     rationale_bahasa,
     order_draft,
+    hint_bahasa,
   } = recommendation;
   const actionBadge = ACTION_BADGES[action];
   const confidenceConfig = CONFIDENCE_CONFIG[confidence];
   const displayName = name ?? sku;
+
+  const ACTION_HINTS: Record<string, string> = {
+    REORDER: "Stok menipis atau perputaran cepat — disarankan pesan ke grosir hari ini",
+    PROMO: "Beri potongan diskon atau paket hemat sebelum kualitas menurun / kadaluarsa",
+    HOLD: "Stok di rak masih cukup banyak — tahan belanja untuk menghemat modal kas",
+    SKIP: "Penjualan melambat — lewati pemesanan untuk menghindari penumpukan modal",
+  };
 
   // Only show factors with |weight| >= 0.05, max 4, sorted by |weight| (spec §4)
   const visibleFactors = factors
@@ -83,39 +91,57 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
         boxShadow: "var(--shadow-card)",
       }}
     >
-      {/* Action badge */}
-      <span
-        className={`text-caption px-3 py-1 w-fit font-semibold ${actionBadge.className}`}
-        style={{ borderRadius: "var(--radius-badge)" }}
-      >
-        {actionBadge.label}
-      </span>
+      {/* Action badge with accessibility title hint */}
+      <div className="flex items-center justify-between">
+        <span
+          title={ACTION_HINTS[action] ?? actionBadge.label}
+          className={`text-caption px-3 py-1 w-fit font-semibold cursor-help ${actionBadge.className}`}
+          style={{ borderRadius: "var(--radius-badge)" }}
+        >
+          {actionBadge.label}
+        </span>
+        <span className="text-xs text-ink-600 hidden sm:inline-block">
+          {ACTION_HINTS[action]}
+        </span>
+      </div>
 
       {/* Product name — never the SKU code (design_system.md §4) */}
       <h3 className="text-heading text-ink-900">{displayName}</h3>
 
-      {/* Quantity range */}
-      <p className="text-numeric text-body text-ink-900">
-        {qty.min}–{qty.max} {qty.unit}{" "}
-        <span className="text-ink-600 font-normal">
-          · kemungkinan {qty.likely} {qty.unit}
-        </span>
-      </p>
+      {/* Quantity range and wholesale pack conversion */}
+      <div className="flex flex-col gap-1">
+        <p className="text-numeric text-body text-ink-900">
+          {qty.min}–{qty.max} {qty.unit}{" "}
+          <span className="text-ink-600 font-normal">
+            · kemungkinan {qty.likely} {qty.unit}
+          </span>
+        </p>
+
+        {qty.pack_display && (
+          <div className="flex items-center gap-1.5 text-caption font-medium px-2 py-0.5 w-fit rounded bg-canvas text-ink-900 border border-border">
+            <span>📦</span>
+            <span>Standar grosir: <strong className="font-semibold">{qty.pack_display}</strong></span>
+          </div>
+        )}
+      </div>
 
       {/* Estimated cost (v1.1) */}
       {est_cost_idr != null && est_cost_idr > 0 && (
         <p className="text-numeric text-caption text-ink-600">
-          ±{formatIDR(est_cost_idr)}
+          Estimasi modal: <span className="font-semibold text-ink-900">±{formatIDR(est_cost_idr)}</span>
         </p>
       )}
 
-      {/* Confidence badge */}
-      <span
-        className={`text-caption px-3 py-1 w-fit font-medium ${confidenceConfig.className}`}
-        style={{ borderRadius: "var(--radius-badge)" }}
-      >
-        {confidenceConfig.label}
-      </span>
+      {/* Confidence badge with explanatory title */}
+      <div className="flex items-center gap-2">
+        <span
+          title={`Tingkat keyakinan data: ${confidenceConfig.label}`}
+          className={`text-caption px-3 py-1 w-fit font-medium ${confidenceConfig.className}`}
+          style={{ borderRadius: "var(--radius-badge)" }}
+        >
+          {confidenceConfig.label}
+        </span>
+      </div>
 
       {/* Factor chips */}
       {visibleFactors.length > 0 && (
@@ -126,7 +152,8 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
             return (
               <span
                 key={factor.key}
-                className="text-caption px-2 py-1 inline-flex items-center gap-1"
+                title={factor.note_bahasa}
+                className="text-caption px-2 py-1 inline-flex items-center gap-1 cursor-help"
                 style={{
                   borderRadius: "var(--radius-chip)",
                   backgroundColor: isPositive
@@ -150,10 +177,19 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
       {/* Rationale */}
       <p className="text-body text-ink-600">{rationale_bahasa}</p>
 
+      {/* Operational Hint Callout */}
+      {hint_bahasa && (
+        <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-ink-900 text-caption">
+          <span className="text-amber-600 font-bold shrink-0">💡 Tips:</span>
+          <span className="text-ink-600 leading-relaxed">{hint_bahasa}</span>
+        </div>
+      )}
+
       {/* Tanya Hanga chip — grounded follow-up about this card */}
       {onAsk && (
         <button
           type="button"
+          title="Tanya alasan AI merekomendasikan saran ini"
           onClick={() =>
             onAsk(
               action === "REORDER"
@@ -161,32 +197,37 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
                 : `Kenapa ${displayName} ${ACTION_BADGES[action].label.toLowerCase()}?`
             )
           }
-          className="touch-target w-fit text-caption font-semibold px-3 py-1 bg-canvas border border-border text-ink-600"
+          className="touch-target w-fit text-caption font-semibold px-3 py-1.5 bg-canvas border border-border text-ink-600 hover:text-ink-900 hover:bg-neutral-50 flex items-center gap-1.5 transition-colors"
           style={{ borderRadius: "var(--radius-badge)" }}
         >
-          🎤 Tanya
+          <span>🎤 Tanya Hanga</span>
+          <span className="text-xs text-neutral-400 font-normal">· Tanya alasan AI</span>
         </button>
       )}
 
-      {/* WhatsApp CTA */}
+      {/* WhatsApp CTA with helper subtitle */}
       {order_draft && (
         <div className="flex flex-col gap-2 pt-2 border-t border-border">
           <p className="text-caption text-ink-600">
-            {order_draft.supplier_ref} · {formatIDR(order_draft.est_cost_idr)}
+            Pemasok: <strong>{order_draft.supplier_ref}</strong> · ±{formatIDR(order_draft.est_cost_idr)}
           </p>
           <a
             href={order_draft.wa_deep_link}
             target="_blank"
             rel="noopener noreferrer"
             onClick={draftOrder}
-            className="touch-target text-body font-semibold text-center py-3 px-4 text-surface pressable"
+            title="Kirim draf pesanan otomatis ke WhatsApp grosir"
+            className="touch-target text-body font-semibold text-center py-3 px-4 text-surface pressable flex flex-col items-center justify-center gap-0.5"
             style={{
               borderRadius: "var(--radius-card)",
               backgroundColor: "var(--color-brand-600)",
               transitionDuration: "var(--duration-fast)",
             }}
           >
-            💬 Pesan via WhatsApp
+            <span>💬 Pesan via WhatsApp</span>
+            <span className="text-xs font-normal opacity-90">
+              Format pesan tersusun otomatis rapi tanpa ketik manual
+            </span>
           </a>
         </div>
       )}

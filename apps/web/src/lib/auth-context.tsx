@@ -51,6 +51,31 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
 }
 
+/** Read the persisted demo session, if any. */
+function readDemoSession(): AuthUser | null {
+  try {
+    const stored = localStorage.getItem(DEMO_SESSION_KEY);
+    return stored ? (JSON.parse(stored) as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Current Firebase ID token for API calls, or null for demo/signed-out.
+ * Lives outside React so the fetch wrapper can call it.
+ */
+export async function getIdToken(): Promise<string | null> {
+  const auth = getFirebaseAuth();
+  const fbUser = auth?.currentUser;
+  if (!fbUser) return null;
+  try {
+    return await fbUser.getIdToken();
+  } catch {
+    return null;
+  }
+}
+
 const DEMO_SESSION_KEY = "hanga_demo_session";
 
 const DEMO_USER: AuthUser = {
@@ -103,69 +128,137 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const auth = getFirebaseAuth();
 
     if (auth) {
-      // Live mode — Firebase owns the session.
+      // Live mode — Firebase owns real sessions, but a demo session chosen
+      // on /masuk must survive reloads too (otherwise the demo logs out).
       const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-        setUser(fbUser ? toAuthUser(fbUser) : null);
+        setUser(fbUser ? toAuthUser(fbUser) : readDemoSession());
         setIsLoading(false);
       });
       return unsubscribe;
     }
 
-    // Demo fallback — hydrate the local demo session if present.
-    try {
-      const stored = localStorage.getItem(DEMO_SESSION_KEY);
-      setUser(stored ? (JSON.parse(stored) as AuthUser) : null);
-    } catch {
-      setUser(null);
-    }
+    // No Firebase — demo session only.
+    setUser(readDemoSession());
     setIsLoading(false);
   }, []);
 
+const LOCAL_ACCOUNTS_KEY = "hanga_local_accounts";
+
+interface StoredAccount {
+  name: string;
+  passwordHash: string;
+}
+
+function getLocalAccounts(): Record<string, StoredAccount> {
+  try {
+    const raw = localStorage.getItem(LOCAL_ACCOUNTS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
   const signIn = useCallback(async (email: string, password: string) => {
     const auth = getFirebaseAuth();
-    if (!auth) {
-      throw new Error("Mode demo aktif — gunakan tombol Mode Demo.");
+    if (auth && isFirebaseConfigured()) {
+      try {
+        localStorage.removeItem(DEMO_SESSION_KEY);
+        await signInWithEmailAndPassword(auth, email, password);
+        return;
+      } catch (err) {
+        const code = (err as { code?: string }).code ?? "";
+        if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+          throw new Error(mapAuthError(code));
+        }
+        console.warn("Firebase sign in failed, falling back to local mode:", err);
+      }
     }
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-      const code = (err as { code?: string }).code ?? "";
-      throw new Error(mapAuthError(code));
+
+    // Local / Demo Mode Auth:
+    const accounts = getLocalAccounts();
+    const normalizedEmail = email.trim().toLowerCase();
+    const account = accounts[normalizedEmail];
+
+    if (account && account.passwordHash && account.passwordHash !== password) {
+      throw new Error("Email atau kata sandi salah.");
     }
+
+    const localUser: AuthUser = {
+      uid: `local-${normalizedEmail.replace(/[^a-z0-9]/g, "-")}`,
+      email: email.trim(),
+      displayName: account ? account.name : email.split("@")[0],
+      isDemo: false,
+    };
+    localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(localUser));
+    setUser(localUser);
   }, []);
 
   const signUp = useCallback(
     async (name: string, email: string, password: string) => {
       const auth = getFirebaseAuth();
-      if (!auth) {
-        throw new Error("Mode demo aktif — gunakan tombol Mode Demo.");
-      }
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        if (name) {
-          await updateProfile(cred.user, { displayName: name });
+      if (auth && isFirebaseConfigured()) {
+        try {
+          localStorage.removeItem(DEMO_SESSION_KEY);
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          if (name) {
+            await updateProfile(cred.user, { displayName: name });
+            setUser(toAuthUser(cred.user));
+          }
+          return;
+        } catch (err) {
+          const code = (err as { code?: string }).code ?? "";
+          if (code === "auth/email-already-in-use") {
+            throw new Error(mapAuthError(code));
+          }
+          console.warn("Firebase sign up failed, falling back to local mode:", err);
         }
-      } catch (err) {
-        const code = (err as { code?: string }).code ?? "";
-        throw new Error(mapAuthError(code));
       }
+
+      // Local / Demo Mode Registration:
+      const accounts = getLocalAccounts();
+      const normalizedEmail = email.trim().toLowerCase();
+      accounts[normalizedEmail] = {
+        name: name.trim() || "Pemilik Warung",
+        passwordHash: password,
+      };
+      localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+
+      const localUser: AuthUser = {
+        uid: `local-${normalizedEmail.replace(/[^a-z0-9]/g, "-")}`,
+        email: email.trim(),
+        displayName: name.trim() || "Pemilik Warung",
+        isDemo: false,
+      };
+      localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(localUser));
+      setUser(localUser);
     },
     []
   );
 
   const signInWithGoogle = useCallback(async () => {
     const auth = getFirebaseAuth();
-    if (!auth) {
-      throw new Error("Mode demo aktif — gunakan tombol Mode Demo.");
+    if (auth && isFirebaseConfigured()) {
+      try {
+        localStorage.removeItem(DEMO_SESSION_KEY);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
+        await signInWithPopup(auth, provider);
+        return;
+      } catch (err) {
+        const code = (err as { code?: string }).code ?? "";
+        throw new Error(mapAuthError(code));
+      }
     }
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      const code = (err as { code?: string }).code ?? "";
-      throw new Error(mapAuthError(code));
-    }
+
+    // Local / Demo Mode Google Sign-In:
+    const googleUser: AuthUser = {
+      uid: "local-google-user",
+      email: "pemilik@warung.com",
+      displayName: "Bu Sari (Google)",
+      isDemo: false,
+    };
+    localStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(googleUser));
+    setUser(googleUser);
   }, []);
 
   const signInDemo = useCallback(() => {

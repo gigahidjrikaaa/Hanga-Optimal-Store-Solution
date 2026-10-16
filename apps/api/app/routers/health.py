@@ -12,6 +12,7 @@ router = APIRouter()
 
 
 @router.get("/healthz")
+@router.get("/health")
 async def healthz() -> dict[str, str]:
     """Liveness probe — returns 200 if the process is running."""
     return {"status": "ok", "version": settings.app_version}

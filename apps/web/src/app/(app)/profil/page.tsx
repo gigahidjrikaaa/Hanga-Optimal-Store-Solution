@@ -82,6 +82,7 @@ export default function ProfilPage() {
               href="https://wa.me/6281234567890"
               target="_blank"
               rel="noopener noreferrer"
+              title="Kirim pesan langsung ke WhatsApp Toko Grosir Jaya"
               className="touch-target px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-caption font-bold flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <span>💬</span> Hubungi
@@ -99,6 +100,7 @@ export default function ProfilPage() {
               href="https://wa.me/6281298765432"
               target="_blank"
               rel="noopener noreferrer"
+              title="Kirim pesan langsung ke WhatsApp Agen Telur Berkah"
               className="touch-target px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-caption font-bold flex items-center gap-1.5 transition-colors shadow-sm"
             >
               <span>💬</span> Hubungi
@@ -129,6 +131,7 @@ export default function ProfilPage() {
         <div className="pt-2 flex flex-col gap-3">
           <a
             href="/onboarding"
+            title="Atur ulang profil toko, barang terlaris, dan modal kas awal"
             className="touch-target w-full py-3 px-4 rounded-xl border border-border bg-surface hover:bg-canvas text-ink-900 font-semibold text-body flex items-center justify-center gap-2 transition-colors shadow-sm"
           >
             <span>🔄</span> Ulangi Interview Awal (Cold Start)
@@ -138,6 +141,7 @@ export default function ProfilPage() {
           <button
             type="button"
             onClick={handleSignOut}
+            title="Keluar dari sesi warung ini"
             className="touch-target w-full py-3 px-4 rounded-xl border border-danger-600/30 bg-surface hover:bg-danger-100 text-danger-600 font-semibold text-body flex items-center justify-center gap-2 transition-colors"
           >
             <span>🚪</span> Keluar

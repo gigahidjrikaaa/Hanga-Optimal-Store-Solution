@@ -102,13 +102,14 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
                 sku="GULA-1KG",
                 name="Gula Pasir Gulaku 1kg",
                 est_cost_idr=210000,
-                qty=QuantityRange(min=10, likely=15, max=20, unit="kg"),
+                qty=QuantityRange(min=10, likely=15, max=20, unit="kg", pack_display="3 sak (15 kg)"),
                 confidence=Confidence.HIGH,
                 factors=[
                     Factor(key=FactorKey.WEEKEND, direction="+", weight=0.20, note_bahasa="ramai akhir pekan"),
                     Factor(key=FactorKey.TREND_UP, direction="+", weight=0.15, note_bahasa="penjualan stabil naik"),
                 ],
                 rationale_bahasa="Pesan 15 kg gula pasir: sisa 4 kg di rak, akhir pekan ramai pembeli bahan kue.",
+                hint_bahasa="Disesuaikan ke 3 sak (15 kg) untuk mendapatkan harga grosir terbaik.",
                 order_draft=OrderDraft(
                     supplier_ref="TOKO GROSIR JAYA",
                     est_cost_idr=210000,
@@ -120,12 +121,13 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
                 sku="TELUR-1KG",
                 name="Telur Ayam Negeri 1kg",
                 est_cost_idr=336000,
-                qty=QuantityRange(min=10, likely=12, max=15, unit="kg"),
+                qty=QuantityRange(min=10, likely=12, max=15, unit="kg", pack_display="12 kg (peti)"),
                 confidence=Confidence.HIGH,
                 factors=[
                     Factor(key=FactorKey.WEEKEND, direction="+", weight=0.18, note_bahasa="sarapan akhir pekan"),
                 ],
                 rationale_bahasa="Pesan 12 kg telur: perputaran cepat tiap Sabtu, hindari kehabisan siang.",
+                hint_bahasa="Perputaran telur tinggi di akhir pekan. Amankan stok pagi sebelum agen kehabisan.",
                 order_draft=OrderDraft(
                     supplier_ref="AGEN TELUR BERKAH",
                     est_cost_idr=336000,
@@ -136,13 +138,14 @@ def _build_baseline_briefing(shop_id: str) -> DailyBriefing:
                 action=ActionType.PROMO,
                 sku="SUSU-UHT-1L",
                 name="Susu UHT Cokelat 1L",
-                qty=QuantityRange(min=3, likely=5, max=8, unit="kotak"),
+                qty=QuantityRange(min=3, likely=5, max=8, unit="kotak", pack_display="5 kotak"),
                 confidence=Confidence.MEDIUM,
                 factors=[
                     Factor(key=FactorKey.WASTE_RISK, direction="-", weight=-0.25, note_bahasa="kadaluarsa 4 hari lagi"),
                     Factor(key=FactorKey.TREND_DOWN, direction="-", weight=-0.14, note_bahasa="gerak lambat"),
                 ],
                 rationale_bahasa="Beri bundel diskon Rp 2.000 dengan roti: habiskan 5 kotak sebelum kadaluarsa 14 Okt.",
+                hint_bahasa="Tawarkan diskon atau paket hemat bersama sarapan pagi agar modal kas cepat kembali.",
                 order_draft=None,
             ),
             Recommendation(

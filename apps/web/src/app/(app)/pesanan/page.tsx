@@ -193,6 +193,11 @@ export default function PesananPage() {
                     href={order.wa_deep_link}
                     target="_blank"
                     rel="noopener noreferrer"
+                    title={
+                      isDraft
+                        ? "Buka WhatsApp dengan pesan pesanan otomatis dan tandai sebagai terkirim"
+                        : "Buka kembali percakapan WhatsApp dengan pemasok"
+                    }
                     onClick={() => {
                       if (isDraft) markAsSent(order.id);
                     }}

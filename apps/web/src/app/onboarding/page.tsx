@@ -21,6 +21,7 @@ interface OnboardingStep {
   question: string;
   placeholder: string;
   type: "text" | "cash";
+  hint?: string;
 }
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
@@ -28,26 +29,31 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     question: "Siapa nama Bu/Pak pemilik warung?",
     placeholder: "contoh: Bu Sari",
     type: "text",
+    hint: "Nama Anda untuk sapaan ramah di briefing pagi harian.",
   },
   {
     question: "Apa nama warung Anda?",
     placeholder: "contoh: Warung Berkah Jaya",
     type: "text",
+    hint: "Nama toko Anda untuk kop pemesanan WhatsApp otomatis ke grosir.",
   },
   {
     question: "Barang apa yang paling sering dijual?",
     placeholder: "contoh: Gula, Minyak, Telur, Susu",
     type: "text",
+    hint: "Membantu AI mengenali produk terlaris di warung Anda lebih cepat.",
   },
   {
     question: "Dari siapa biasanya Anda belanja stok?",
     placeholder: "contoh: Toko Grosir Jaya",
     type: "text",
+    hint: "Nama pemasok langganan untuk pembuatan draf order WhatsApp.",
   },
   {
     question: "Berapa kas yang bisa dipakai belanja hari ini?",
     placeholder: "contoh: 500000",
     type: "cash",
+    hint: "Uang tunai siap pakai di laci toko agar rekomendasi belanja pas dengan modal Anda.",
   },
 ];
 
@@ -157,7 +163,15 @@ export default function OnboardingPage() {
         </div>
 
         {/* Question */}
-        <h1 className="text-display text-ink-900">{step.question}</h1>
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-display text-ink-900">{step.question}</h1>
+          {step.hint && (
+            <p className="text-caption text-ink-600 flex items-center gap-1.5">
+              <span>💡</span>
+              <span>{step.hint}</span>
+            </p>
+          )}
+        </div>
 
         {/* Input */}
         {step.type === "cash" ? (
@@ -168,6 +182,7 @@ export default function OnboardingPage() {
                   key={chip}
                   type="button"
                   onClick={() => handleChange(String(chip))}
+                  title={`Pilih cepat modal Rp ${chip.toLocaleString("id-ID")}`}
                   className={`touch-target px-4 text-body font-semibold border transition-colors ${
                     answers[currentStep] === String(chip)
                       ? "bg-brand-600 border-brand-600 text-surface"
@@ -219,6 +234,7 @@ export default function OnboardingPage() {
         {currentStep > 0 && (
           <button
             onClick={handleBack}
+            title="Kembali ke pertanyaan sebelumnya"
             className="touch-target text-body font-semibold py-3 px-6 border border-border text-ink-600 transition-colors"
             style={{
               borderRadius: "var(--radius-card)",
@@ -231,14 +247,15 @@ export default function OnboardingPage() {
         <button
           onClick={handleNext}
           disabled={!canProceed || isSaving}
-          className="touch-target flex-1 text-body font-semibold py-3 px-6 text-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title={isLastStep ? "Simpan profil dan buka beranda toko" : "Lanjut ke langkah berikutnya"}
+          className="touch-target flex-1 text-body font-semibold py-3 px-6 text-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed pressable"
           style={{
             borderRadius: "var(--radius-card)",
             backgroundColor: "var(--color-brand-600)",
             transitionDuration: "var(--duration-fast)",
           }}
         >
-          {isSaving ? "Menyimpan…" : isLastStep ? "Mulai ✨" : "Lanjut"}
+          {isSaving ? "Menyimpan…" : isLastStep ? "Mulai Pakai Hanga ✨" : "Lanjut"}
         </button>
       </div>
     </div>

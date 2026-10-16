@@ -4,6 +4,8 @@
  * Thin wrapper around fetch for calling the FastAPI backend.
  */
 
+import { getIdToken } from "@/lib/auth-context";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
@@ -22,12 +24,16 @@ async function request<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
+  // Live owners send their Firebase ID token; demo sessions send none and are
+  // served as the demo principal by the backend (HANGA_DEMO_MODE).
+  const token = await getIdToken();
   const response = await fetch(url, {
+    ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
-    ...options,
   });
 
   if (!response.ok) {

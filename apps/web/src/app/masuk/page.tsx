@@ -166,6 +166,7 @@ export default function MasukPage() {
                 key={m}
                 type="button"
                 role="tab"
+                title={m === "masuk" ? "Buka warung dengan akun terdaftar" : "Buat akun baru untuk warung Anda"}
                 aria-selected={mode === m}
                 onClick={() => {
                   setMode(m);
@@ -198,41 +199,53 @@ export default function MasukPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {mode === "daftar" && (
               <div className="flex flex-col gap-1">
-                <label htmlFor="name" className="text-caption text-ink-600">
+                <label htmlFor="name" className="text-caption text-ink-600 font-medium">
                   Nama pemilik warung
                 </label>
                 <input
                   id="name"
                   type="text"
+                  placeholder="contoh: Bu Sari atau Pak Joko"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
+                  title="Nama pemilik warung untuk sapaan dan kop pesan grosir"
                   className="touch-target w-full px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
                   style={{ borderRadius: "var(--radius-chip)" }}
                 />
+                <p className="text-caption text-ink-600 flex items-center gap-1">
+                  <span>💡</span>
+                  <span>Sapaan hangat di briefing pagi dan pesan belanja.</span>
+                </p>
               </div>
             )}
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="email" className="text-caption text-ink-600">
-                Email
+              <label htmlFor="email" className="text-caption text-ink-600 font-medium">
+                Email warung
               </label>
               <input
                 id="email"
                 type="email"
+                placeholder="contoh: busari@warung.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 inputMode="email"
                 autoFocus
+                title="Alamat email untuk masuk ke warung Anda"
                 className="touch-target w-full px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
                 style={{ borderRadius: "var(--radius-chip)" }}
               />
+              <p className="text-caption text-ink-600 flex items-center gap-1">
+                <span>💡</span>
+                <span>Digunakan sebagai tanda pengenal toko Anda.</span>
+              </p>
             </div>
 
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-caption text-ink-600">
+                <label htmlFor="password" className="text-caption text-ink-600 font-medium">
                   Kata sandi
                 </label>
                 <button
@@ -242,7 +255,8 @@ export default function MasukPage() {
                   aria-label={
                     showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"
                   }
-                  className="touch-target text-caption text-ink-600"
+                  title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  className="touch-target text-caption text-ink-600 font-medium hover:text-ink-900"
                 >
                   {showPassword ? "🙈 Sembunyikan" : "👁️ Tampilkan"}
                 </button>
@@ -250,9 +264,11 @@ export default function MasukPage() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                placeholder="Minimal 8 karakter"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={mode === "masuk" ? "current-password" : "new-password"}
+                title="Kata sandi minimal 8 karakter"
                 className={`touch-target w-full px-3 text-body text-ink-900 bg-canvas border focus:outline-none ${
                   isPasswordTooShort
                     ? "border-warn-600"
@@ -260,9 +276,15 @@ export default function MasukPage() {
                 }`}
                 style={{ borderRadius: "var(--radius-chip)" }}
               />
-              {isPasswordTooShort && (
-                <p className="text-caption text-warn-600">
-                  Minimal 8 karakter — panjang lebih baik daripada rumit.
+              {isPasswordTooShort ? (
+                <p className="text-caption text-warn-600 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>Minimal 8 karakter — panjang lebih baik daripada rumit.</span>
+                </p>
+              ) : (
+                <p className="text-caption text-ink-600 flex items-center gap-1">
+                  <span>💡</span>
+                  <span>Gunakan kata yang mudah Anda ingat.</span>
                 </p>
               )}
             </div>
@@ -270,6 +292,7 @@ export default function MasukPage() {
             <button
               type="submit"
               disabled={!canSubmit}
+              title={mode === "masuk" ? "Buka warung dan lihat briefing hari ini" : "Daftarkan akun dan buka warung"}
               className="touch-target w-full flex items-center justify-center gap-2 text-body font-semibold text-surface pressable disabled:opacity-50"
               style={{
                 borderRadius: "var(--radius-card)",
@@ -285,9 +308,9 @@ export default function MasukPage() {
                   <span className="spinner" aria-hidden="true" /> Menyiapkan…
                 </>
               ) : mode === "masuk" ? (
-                "Masuk"
+                "Masuk ke Warung 🚪"
               ) : (
-                "Buat Akun"
+                "Buat Akun Warung ✨"
               )}
             </button>
           </form>
@@ -304,13 +327,14 @@ export default function MasukPage() {
             type="button"
             onClick={handleGoogle}
             disabled={isBusy}
+            title="Masuk cepat menggunakan akun Google"
             className="touch-target w-full flex items-center justify-center gap-3 text-body font-semibold text-ink-900 bg-surface border border-border pressable disabled:opacity-50"
             style={{ borderRadius: "var(--radius-card)" }}
           >
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
               <path
                 fill="#EA4335"
-                d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.7 9.5 24 9.5z"
+                d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.7 9.5 24 9.5z"
               />
               <path
                 fill="#4285F4"
@@ -333,7 +357,8 @@ export default function MasukPage() {
             type="button"
             onClick={handleDemo}
             disabled={isBusy}
-            className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] w-full text-body font-semibold text-brand-800 bg-brand-100/70 border border-brand-600 disabled:opacity-50"
+            title="Jelajahi briefing dan fitur Hanga langsung sebagai Bu Sari tanpa perlu mendaftar"
+            className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] w-full text-body font-semibold text-brand-800 bg-brand-100/70 border border-brand-600 pressable disabled:opacity-50 transition-colors hover:bg-brand-100"
             style={{ borderRadius: "var(--radius-card)" }}
           >
             🧪 Coba Mode Demo

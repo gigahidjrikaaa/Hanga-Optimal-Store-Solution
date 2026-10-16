@@ -41,6 +41,16 @@ def test_live_mode_rejects_invalid_token(monkeypatch):
     assert resp.json()["detail"] == "Invalid authentication token"
 
 
+def test_demo_mode_unverifiable_token_falls_back_to_demo():
+    """Demo mode: a token Firebase Admin can't verify must not lock the owner out."""
+    resp = client.get(
+        "/api/v1/briefings/shops/warung-bu-sari/briefings/2026-10-10?scenario=BASELINE",
+        headers={"Authorization": "Bearer not-a-real-token"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["shop_id"] == "warung-bu-sari"
+
+
 def test_demo_shop_access_allows_demo_shop():
     """Demo principal may access the demo shop end-to-end (extraction confirm)."""
     created = client.post(

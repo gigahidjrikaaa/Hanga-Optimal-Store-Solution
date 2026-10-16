@@ -44,6 +44,17 @@ export function CaptureCard({ onCapture, isUploading = false }: CaptureCardProps
         </p>
       </div>
 
+      <div className="p-3 bg-canvas border border-border/80 rounded-lg text-caption text-ink-600 text-left flex flex-col gap-1 w-full max-w-xs">
+        <span className="font-semibold text-ink-900 flex items-center gap-1 text-xs">
+          <span>💡</span> Tips foto catatan penjualan:
+        </span>
+        <ul className="list-disc list-inside text-[11px] space-y-0.5 text-ink-600">
+          <li>Pastikan nama barang dan angka penjualan jelas</li>
+          <li>Arahkan kamera tegak lurus dari atas kertas</li>
+          <li>Pencahayaan terang dan hindari bayangan tangan</li>
+        </ul>
+      </div>
+
       {isUploading ? (
         <div className="w-full rise-in">
           <div
@@ -60,14 +71,16 @@ export function CaptureCard({ onCapture, isUploading = false }: CaptureCardProps
           </p>
         </div>
       ) : (
-        <label className="touch-target text-body font-semibold py-3 px-6 text-surface cursor-pointer pressable"
+        <label
+          title="Buka kamera atau pilih foto buku catatan"
+          className="touch-target text-body font-semibold py-3 px-6 text-surface cursor-pointer pressable shadow-sm"
           style={{
             borderRadius: "var(--radius-card)",
             backgroundColor: "var(--color-brand-600)",
             transitionDuration: "var(--duration-fast)",
           }}
         >
-          Ambil Foto
+          Ambil Foto Catatan
           <input
             type="file"
             accept="image/*"

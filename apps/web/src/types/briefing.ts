@@ -68,6 +68,7 @@ export interface QuantityRange {
   likely: number;
   max: number;
   unit: string;
+  pack_display?: string | null;
 }
 
 export interface OrderDraft {
@@ -88,6 +89,7 @@ export interface Recommendation {
   factors: Factor[];
   rationale_bahasa: string;
   order_draft?: OrderDraft | null;
+  hint_bahasa?: string | null;
 }
 
 /**

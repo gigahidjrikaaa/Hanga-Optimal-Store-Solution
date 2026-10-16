@@ -24,49 +24,63 @@ const SCENARIOS: Scenario[] = [
   "RAIN_TOMORROW",
 ];
 
+const SCENARIO_HINTS: Record<Scenario, string> = {
+  BASELINE: "Hari biasa: Keseimbangan stok normal, amankan bahan pokok yang menipis.",
+  LEBARAN_T14: "Simulasi H-14 Lebaran: Lonjakan pembelian sirup, biskuit kaleng, dan bahan kue parcel.",
+  PAYDAY_T3: "Simulasi Musim Gajian: Daya beli warga meningkat, prioritas tambah beras, minyak, dan susu.",
+  RAIN_TOMORROW: "Simulasi Hujan Besok: Pengunjung berkurang, kurangi stok basah & perbanyak mie/kopi seduh.",
+};
+
 export function ScenarioToggle({
   active,
   onSelect,
   disabled = false,
 }: ScenarioToggleProps) {
   return (
-    <div
-      className="flex gap-2 overflow-x-auto py-2 px-4 scrollbar-none"
-      role="tablist"
-      aria-label="Skenario"
-    >
-      {SCENARIOS.map((scenario) => {
-        const isActive = scenario === active;
-        return (
-          <button
-            key={scenario}
-            role="tab"
-            aria-selected={isActive}
-            disabled={disabled}
-            onClick={() => onSelect(scenario)}
-            className="text-caption whitespace-nowrap px-4 py-2 touch-target pressable"
-            style={{
-              borderRadius: "var(--radius-chip)",
-              backgroundColor: isActive
-                ? "var(--color-info-600)"
-                : "var(--color-surface)",
-              color: isActive
-                ? "white"
-                : "var(--color-ink-600)",
-              border: isActive
-                ? "none"
-                : "1px solid var(--color-border)",
-              transitionDuration: "var(--duration-normal)",
-              transitionTimingFunction: "var(--ease-spring)",
-              transform: isActive ? "scale(1.04)" : "scale(1)",
-              cursor: disabled ? "not-allowed" : "pointer",
-              opacity: disabled ? 0.5 : 1,
-            }}
-          >
-            {SCENARIO_LABELS[scenario]}
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-1.5 px-4">
+      <div
+        className="flex gap-2 overflow-x-auto py-1 scrollbar-none"
+        role="tablist"
+        aria-label="Skenario"
+      >
+        {SCENARIOS.map((scenario) => {
+          const isActive = scenario === active;
+          return (
+            <button
+              key={scenario}
+              role="tab"
+              aria-selected={isActive}
+              disabled={disabled}
+              onClick={() => onSelect(scenario)}
+              title={SCENARIO_HINTS[scenario]}
+              className="text-caption whitespace-nowrap px-4 py-2 touch-target pressable"
+              style={{
+                borderRadius: "var(--radius-chip)",
+                backgroundColor: isActive
+                  ? "var(--color-info-600)"
+                  : "var(--color-surface)",
+                color: isActive
+                  ? "white"
+                  : "var(--color-ink-600)",
+                border: isActive
+                  ? "none"
+                  : "1px solid var(--color-border)",
+                transitionDuration: "var(--duration-normal)",
+                transitionTimingFunction: "var(--ease-spring)",
+                transform: isActive ? "scale(1.04)" : "scale(1)",
+                cursor: disabled ? "not-allowed" : "pointer",
+                opacity: disabled ? 0.5 : 1,
+              }}
+            >
+              {SCENARIO_LABELS[scenario]}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-xs text-ink-600 flex items-center gap-1.5 px-1">
+        <span>💡</span>
+        <span>{SCENARIO_HINTS[active]}</span>
+      </p>
     </div>
   );
 }

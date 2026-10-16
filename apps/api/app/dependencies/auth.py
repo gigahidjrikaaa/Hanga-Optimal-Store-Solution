@@ -56,7 +56,15 @@ def get_current_principal(
     3. No token + live mode → 401.
     """
     if creds is not None:
-        return _principal_from_token(creds.credentials)
+        try:
+            return _principal_from_token(creds.credentials)
+        except HTTPException:
+            # Demo mode: Firebase Admin may not be configured (local/Docker),
+            # so a real owner's token can't be verified. Serve the demo shop
+            # rather than locking the owner out; live mode stays strict.
+            if not settings.demo_mode:
+                raise
+            logger.info("Token unverifiable in demo mode; serving demo principal")
 
     if settings.demo_mode:
         return Principal(

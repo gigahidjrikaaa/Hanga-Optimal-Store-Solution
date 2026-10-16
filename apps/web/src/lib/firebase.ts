@@ -20,9 +20,18 @@ const firebaseConfig = {
 };
 
 export function isFirebaseConfigured(): boolean {
-  return Boolean(
-    firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId
-  );
+  const { apiKey, projectId, appId } = firebaseConfig;
+  if (!apiKey || !projectId || !appId) return false;
+  // Guard against template / dummy placeholder values in .env.local
+  if (
+    apiKey.includes("your-") ||
+    projectId.includes("your-") ||
+    appId.includes("xxxx") ||
+    apiKey === "mock-api-key"
+  ) {
+    return false;
+  }
+  return true;
 }
 
 /** Initialized Auth instance, or null when Firebase is not configured. */

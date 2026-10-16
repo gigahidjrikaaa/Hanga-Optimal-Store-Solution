@@ -31,6 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <li key={tab.key}>
                 <Link
                   href={tab.href}
+                  title={`Menu ${tab.label}`}
                   className={`touch-target flex flex-col items-center gap-1 px-3 transition-colors`}
                   style={{
                     color: isActive

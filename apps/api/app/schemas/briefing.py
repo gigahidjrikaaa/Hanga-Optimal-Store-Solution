@@ -120,6 +120,10 @@ class QuantityRange(BaseModel):
     likely: int = Field(..., ge=0)
     max: int = Field(..., ge=0)
     unit: str = Field(..., description="Unit of measure, e.g. 'kg', 'tray', 'pcs'")
+    pack_display: str | None = Field(
+        default=None,
+        description="Wholesale packaging breakdown, e.g. '1 karton (40 bungkus)' or '2 renceng'",
+    )
 
 
 class OrderDraft(BaseModel):
@@ -153,6 +157,11 @@ class Recommendation(BaseModel):
         description="Plain Bahasa rationale, ≤160 chars, no model jargon",
     )
     order_draft: OrderDraft | None = None
+    hint_bahasa: str | None = Field(
+        default=None,
+        max_length=200,
+        description="Operational guidance hint for store owner (e.g. wholesale lot-sizing or markdown tip)",
+    )
 
 
 class Budget(BaseModel):

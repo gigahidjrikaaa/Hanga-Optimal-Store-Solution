@@ -222,6 +222,33 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
           </p>
         )}
 
+        {/* Starter suggestion chips when idle & no question yet */}
+        {!answer && state === "idle" && (
+          <div className="flex flex-col gap-2 py-1">
+            <p className="text-xs text-ink-600 font-medium">💡 Contoh pertanyaan:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                "Kenapa telur dipesan sekarang?",
+                "Bisa tunda pesanan kopi dulu?",
+                "Berapa sisa kas jika belanja sekarang?",
+                "Kapan batas aman susu sebelum basi?",
+              ].map((starter) => (
+                <button
+                  key={starter}
+                  type="button"
+                  onClick={() => {
+                    setQuestion(starter);
+                    void ask(starter);
+                  }}
+                  className="text-caption px-2.5 py-1 bg-canvas hover:bg-neutral-100 border border-border text-ink-600 rounded-full transition-colors text-left"
+                >
+                  {starter}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Answer */}
         {answer && state !== "listening" && (
           <div
@@ -260,40 +287,48 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         )}
 
         {/* Always-visible text fallback + mic */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void ask(question);
-          }}
-          className="flex items-center gap-2 pt-1"
-        >
-          <button
-            type="button"
-            onClick={startListening}
-            disabled={busy}
-            aria-label="Tanya dengan suara"
-            className="touch-target text-xl bg-brand-100 text-brand-800 disabled:opacity-50"
-            style={{ borderRadius: "var(--radius-badge)" }}
+        <div className="flex flex-col gap-1.5 pt-1">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void ask(question);
+            }}
+            className="flex items-center gap-2"
           >
-            🎙️
-          </button>
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Contoh: kenapa pesan gula 15 kg?"
-            className="touch-target flex-1 px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
-            style={{ borderRadius: "var(--radius-chip)" }}
-          />
-          <button
-            type="submit"
-            disabled={busy || question.trim().length < 2}
-            className="touch-target px-4 text-body font-semibold text-surface bg-brand-600 disabled:opacity-50"
-            style={{ borderRadius: "var(--radius-chip)" }}
-          >
-            Tanya
-          </button>
-        </form>
+            <button
+              type="button"
+              onClick={startListening}
+              disabled={busy}
+              aria-label="Tanya dengan suara"
+              title="Tekan untuk bicara langsung via mikrofon"
+              className="touch-target text-xl bg-brand-100 text-brand-800 disabled:opacity-50 hover:bg-brand-200 transition-colors"
+              style={{ borderRadius: "var(--radius-badge)" }}
+            >
+              🎙️
+            </button>
+            <input
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Contoh: kenapa pesan gula 15 kg?"
+              aria-label="Ketik pertanyaan untuk Hanga"
+              className="touch-target flex-1 px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
+              style={{ borderRadius: "var(--radius-chip)" }}
+            />
+            <button
+              type="submit"
+              disabled={busy || question.trim().length < 2}
+              title="Kirim pertanyaan"
+              className="touch-target px-4 text-body font-semibold text-surface bg-brand-600 disabled:opacity-50 pressable"
+              style={{ borderRadius: "var(--radius-chip)" }}
+            >
+              Tanya
+            </button>
+          </form>
+          <p className="text-[11px] text-ink-600 text-center">
+            🎙️ Tekan mikrofon untuk bicara atau ketik pertanyaan langsung dalam Bahasa Indonesia
+          </p>
+        </div>
       </div>
     </div>
   );
