@@ -527,3 +527,107 @@ def _build_rain_briefing(shop_id: str) -> DailyBriefing:
             flags=["Peringatan BMKG: Hujan lebat disertai angin kencang siang hingga malam"],
         ),
     )
+
+
+def build_inventory_overview(shop_id: str = DEMO_SHOP_ID):
+    from app.schemas.inventory import InventoryItem, InventoryOverview
+    from app.services.catalog_data import BU_SARI_CATALOG, BU_SARI_STOCK
+
+    supplier_map = {
+        "TELUR-1KG": "AGEN TELUR BERKAH",
+        "ES-KRIM-CONE": "DISTRIBUTOR WALLS",
+        "ROTI-BASAH": "SALES SARI ROTI",
+    }
+    pack_map = {
+        "GULA-1KG": "1 sak = 5 kg",
+        "TELUR-1KG": "1 peti = 12 kg",
+        "MINYAK-GORENG-2L": "1 karton = 6 pouch",
+        "BERAS-PANDAN-5KG": "1 karung = 5 kg",
+        "MIE-INSTAN-GORENG": "1 dus = 40 bungkus",
+        "MIE-SOTO-AYAM": "1 dus = 40 bungkus",
+        "KOPI-KAPALAPI": "1 renceng = 10 sachet",
+        "KOPI-JAHE-SACHET": "1 renceng = 10 sachet",
+        "SUSU-UHT-1L": "1 karton = 12 kotak",
+        "SABUN-COLEK": "1 dus = 24 bungkus",
+        "TEPUNG-TERIGU-1KG": "1 sak = 25 kg",
+        "SIRUP-MARJAN-650ML": "1 karton = 12 botol",
+        "BISKUIT-KHONG-GUAN": "1 karton = 6 kaleng",
+        "ROKOK-SAMP-16": "1 slop = 10 bungkus",
+        "IKAN-ASIN-100G": "1 pak = 10 bungkus",
+        "TOLAK-ANGIN": "1 boks = 12 sachet",
+        "ES-KRIM-CONE": "1 boks = 24 buah",
+        "ROTI-BASAH": "1 baki = 20 buah",
+    }
+    velocities = {
+        "GULA-1KG": 1.8,
+        "TELUR-1KG": 2.2,
+        "KOPI-KAPALAPI": 1.4,
+        "SUSU-UHT-1L": 0.8,
+        "MINYAK-GORENG-2L": 1.1,
+        "SABUN-COLEK": 0.4,
+        "BERAS-PANDAN-5KG": 0.4,
+        "ROKOK-SAMP-16": 1.5,
+        "IKAN-ASIN-100G": 0.8,
+        "MIE-INSTAN-GORENG": 0.3,
+        "SIRUP-MARJAN-650ML": 0.6,
+        "BISKUIT-KHONG-GUAN": 0.3,
+        "TEPUNG-TERIGU-1KG": 1.2,
+        "MIE-SOTO-AYAM": 0.2,
+        "KOPI-JAHE-SACHET": 0.6,
+        "TOLAK-ANGIN": 0.5,
+        "ES-KRIM-CONE": 1.0,
+        "ROTI-BASAH": 3.0,
+    }
+
+    items: list[InventoryItem] = []
+    for entry in BU_SARI_CATALOG:
+        stock = BU_SARI_STOCK.get(entry.sku, 0.0)
+        vel = velocities.get(entry.sku, 1.0)
+        cov = round(stock / max(vel, 0.1), 1)
+        tot_val = int(stock * entry.unit_cost_idr)
+
+        if entry.sku == "SUSU-UHT-1L" or (entry.perishable and entry.shelf_days and entry.shelf_days <= 7):
+            status = "EXPIRED_RISK"
+        elif entry.sku in ("TELUR-1KG", "GULA-1KG") or cov <= 2.0:
+            status = "CRITICAL"
+        elif cov <= 3.5:
+            status = "LOW"
+        elif cov >= 15.0:
+            status = "OVERSTOCK"
+        else:
+            status = "SAFE"
+
+        items.append(
+            InventoryItem(
+                sku=entry.sku,
+                name=entry.name,
+                category=entry.category,
+                unit=entry.unit,
+                stock_qty=stock,
+                unit_cost_idr=entry.unit_cost_idr,
+                total_value_idr=tot_val,
+                daily_velocity=vel,
+                days_of_coverage=cov,
+                safety_stock=round(vel * 2.0, 1),
+                status=status,
+                perishable=bool(entry.perishable),
+                shelf_days=entry.shelf_days,
+                pack_display=pack_map.get(entry.sku),
+                supplier_ref=supplier_map.get(entry.sku, "TOKO GROSIR JAYA"),
+            )
+        )
+
+    # Sort items: CRITICAL, EXPIRED_RISK, LOW, SAFE, OVERSTOCK
+    status_priority = {"CRITICAL": 0, "EXPIRED_RISK": 1, "LOW": 2, "SAFE": 3, "OVERSTOCK": 4}
+    items.sort(key=lambda x: (status_priority.get(x.status, 9), -x.total_value_idr))
+
+    return InventoryOverview(
+        shop_id=shop_id,
+        total_skus=len(items),
+        total_inventory_value_idr=sum(i.total_value_idr for i in items),
+        low_stock_count=sum(1 for i in items if i.status in ("CRITICAL", "LOW")),
+        waste_risk_count=sum(1 for i in items if i.status == "EXPIRED_RISK"),
+        safe_stock_count=sum(1 for i in items if i.status == "SAFE"),
+        items=items,
+    )
+

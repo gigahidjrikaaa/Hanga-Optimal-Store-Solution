@@ -18,10 +18,11 @@ import { AskSheet } from "@/components/ask-hanga";
 import { RiskBanner } from "@/components/risk-banner";
 import { RecommendationCard } from "@/components/recommendation-card";
 import { MoverList } from "@/components/mover-list";
+import { InventoryHealthBar } from "@/components/inventory-health-bar";
 import { api } from "@/lib/api";
 import { DEMO_DATE, DEMO_SHOP_ID } from "@/lib/constants";
-import { DEMO_BRIEFINGS } from "@/lib/demo-data";
-import type { ActionType, DailyBriefing, Scenario } from "@/types";
+import { DEMO_BRIEFINGS, DEMO_INVENTORY } from "@/lib/demo-data";
+import type { ActionType, DailyBriefing, InventoryOverview, Scenario } from "@/types";
 
 // Spec §4 card ordering (client-side enforced).
 const CARD_ORDER: ActionType[] = ["REORDER", "PROMO", "HOLD", "SKIP"];
@@ -32,6 +33,7 @@ export default function BerandaPage() {
   const [briefing, setBriefing] = useState<DailyBriefing | null>(
     DEMO_BRIEFINGS.BASELINE
   );
+  const [inventoryOverview, setInventoryOverview] = useState<InventoryOverview>(DEMO_INVENTORY);
   const [isLoading, setIsLoading] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [askSeed, setAskSeed] = useState<string | undefined>(undefined);
@@ -74,6 +76,14 @@ export default function BerandaPage() {
     }
   }, []);
 
+  // Fetch store inventory overview for executive KPI bar (Tier 1)
+  useEffect(() => {
+    api
+      .get<InventoryOverview>(`/inventory/shops/${DEMO_SHOP_ID}`)
+      .then((data) => setInventoryOverview(data))
+      .catch(() => setInventoryOverview(DEMO_INVENTORY));
+  }, []);
+
   return (
     <AppShell>
       <div className="flex flex-col gap-4 py-4">
@@ -99,6 +109,9 @@ export default function BerandaPage() {
             </h1>
           )}
         </div>
+
+        {/* Executive Inventory Health Bar (Tier 1) */}
+        <InventoryHealthBar overview={inventoryOverview} />
 
         {/* Scenario toggle */}
         <ScenarioToggle

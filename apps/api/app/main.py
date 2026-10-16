@@ -13,7 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import briefings, extractions, health, orders, sales, shops
+from app.routers import briefings, extractions, health, inventory, orders, sales, shops
 
 logger = logging.getLogger(__name__)
 
@@ -81,3 +81,4 @@ app.include_router(extractions.router, prefix="/api/v1", tags=["Extractions"])
 app.include_router(orders.router, prefix="/api/v1", tags=["Orders"])
 app.include_router(sales.router, prefix="/api/v1", tags=["Sales"])
 app.include_router(shops.router, prefix="/api/v1", tags=["Shops"])
+app.include_router(inventory.router, prefix="/api/v1", tags=["Inventory"])

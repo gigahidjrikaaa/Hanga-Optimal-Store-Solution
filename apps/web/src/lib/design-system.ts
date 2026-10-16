@@ -126,3 +126,46 @@ export function formatDelta(delta: number): string {
   const sign = pct >= 0 ? "+" : "−";
   return `${sign}${Math.abs(pct)}%`;
 }
+
+// ---------------------------------------------------------------------------
+// Inventory status badge config
+// ---------------------------------------------------------------------------
+
+export const INVENTORY_STATUS_CONFIG = {
+  CRITICAL: {
+    label: "Kritis / Habis",
+    shortLabel: "Kritis",
+    badgeClass: "bg-red-100 text-red-800 border border-red-300",
+    pillClass: "bg-red-500 text-white",
+    icon: "🚨",
+  },
+  EXPIRED_RISK: {
+    label: "Risiko Basi / Expired",
+    shortLabel: "Risiko Basi",
+    badgeClass: "bg-amber-100 text-amber-800 border border-amber-300",
+    pillClass: "bg-amber-500 text-white",
+    icon: "⚠️",
+  },
+  LOW: {
+    label: "Stok Menipis",
+    shortLabel: "Menipis",
+    badgeClass: "bg-orange-100 text-orange-800 border border-orange-300",
+    pillClass: "bg-orange-500 text-white",
+    icon: "📉",
+  },
+  SAFE: {
+    label: "Stok Aman",
+    shortLabel: "Aman",
+    badgeClass: "bg-emerald-100 text-emerald-800 border border-emerald-300",
+    pillClass: "bg-emerald-600 text-white",
+    icon: "✅",
+  },
+  OVERSTOCK: {
+    label: "Stok Menumpuk",
+    shortLabel: "Menumpuk",
+    badgeClass: "bg-slate-100 text-slate-700 border border-slate-300",
+    pillClass: "bg-slate-500 text-white",
+    icon: "📦",
+  },
+} as const;
+
