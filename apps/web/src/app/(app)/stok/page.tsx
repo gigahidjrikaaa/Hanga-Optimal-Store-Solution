@@ -1,14 +1,14 @@
 /**
- * Stok — Inventory Catalog & Stock Health Dashboard (Tier 2).
+ * Stok — Warung Merchandise & Stock Health Dashboard (Tier 2).
  *
- * Full production-ready inventory dashboard for Warung Bu Sari:
- * - Search by product name / SKU
- * - Category filter tabs
- * - Status filter pills (Critical, Low, Safe, Overstock, Expired Risk)
- * - Days of coverage indicators (Stok / Penjualan Harian)
- * - Wholesale pack sizes and supplier links
- * - Direct WhatsApp restock shortcuts (auto-drafts to /pesanan)
- * - Micro-hints on cards and buttons per design guidelines
+ * Designed from the ground up for the mental model of warung kelontong owners (Bu Sari):
+ * - Search by familiar product names (Telur, Gula, Kopi)
+ * - Warung-native categories (Bahan Pokok, Minuman, Camilan, dsb.)
+ * - Intuitive stock statuses (Mau Habis, Risiko Basi, Aman, Menumpuk)
+ * - Human-friendly coverage: "Cukup Buat: 1-2 hari lagi", "Laku Sehari: ~2 kg"
+ * - Wholesale packing context (1 peti = 12 kg, 1 sak = 5 kg, 1 renceng = 10 sachet)
+ * - Direct WhatsApp reorder drafting to suppliers (Agen Telur, Toko Grosir Jaya)
+ * - Empathetic micro-hints explaining cash-drawer and stockout impacts
  */
 
 "use client";
@@ -25,12 +25,12 @@ import { formatIDR, INVENTORY_STATUS_CONFIG } from "@/lib/design-system";
 import type { InventoryItem, InventoryOverview, InventoryStatus } from "@/types";
 
 const CATEGORIES = [
-  { key: "ALL", label: "Semua Kategori", icon: "🧺" },
+  { key: "ALL", label: "Semua Dagangan", icon: "🧺" },
   { key: "BAHAN_POKOK", label: "Bahan Pokok", icon: "🌾" },
-  { key: "MINUMAN", label: "Minuman", icon: "☕" },
-  { key: "SNACK", label: "Camilan / Roti", icon: "🍪" },
-  { key: "LAINNYA", label: "Lainnya & Rokok", icon: "📦" },
-  { key: "PERAWATAN", label: "Perawatan & Rumah", icon: "🧼" },
+  { key: "MINUMAN", label: "Kopi & Minuman", icon: "☕" },
+  { key: "SNACK", label: "Camilan & Roti", icon: "🍪" },
+  { key: "LAINNYA", label: "Rokok & Lainnya", icon: "📦" },
+  { key: "PERAWATAN", label: "Sabun & Rumah", icon: "🧼" },
 ];
 
 type SortOption = "URGENCY" | "DAYS_ASC" | "VALUE_DESC" | "NAME_ASC";
@@ -126,9 +126,9 @@ function StokDashboard() {
   // Handle Quick Reorder drafting to orders API + WhatsApp
   const handleQuickReorder = (item: InventoryItem) => {
     setOrderedSku(item.sku);
-    setTimeout(() => setOrderedSku(null), 3000);
+    setTimeout(() => setOrderedSku(null), 3500);
 
-    // Draft order via API in background
+    // Draft order via API in background so it appears on /pesanan
     api
       .post("/orders", {
         shop_id: DEMO_SHOP_ID,
@@ -142,9 +142,9 @@ function StokDashboard() {
       })
       .catch(() => {});
 
-    // Open WhatsApp deep link
+    // Open WhatsApp deep link with conversational Bahasa
     const text = encodeURIComponent(
-      `Halo ${item.supplier_ref ?? "Toko Grosir"}, Bu Sari mau pesan ${item.name} (${item.pack_display ?? item.unit}). Mohon konfirmasi stok dan pengiriman ya. Terima kasih!`
+      `Halo ${item.supplier_ref ?? "Toko Grosir"}, Bu Sari mau pesan ${item.name} (${item.pack_display ?? item.unit}). Mohon dikirim pagi ini ya. Terima kasih!`
     );
     window.open(`https://wa.me/6281234567890?text=${text}`, "_blank");
   };
@@ -158,10 +158,10 @@ function StokDashboard() {
             <HangaLogo variant="icon" size="sm" />
             <div>
               <span className="text-body font-bold text-ink-900 block leading-tight">
-                Katalog & Stok
+                Stok & Dagangan
               </span>
               <span className="text-[11px] text-ink-600 block">
-                Warung Bu Sari · Terpantau Realtime
+                Warung Bu Sari · Terpantau Otomatis
               </span>
             </div>
           </div>
@@ -176,9 +176,9 @@ function StokDashboard() {
 
         {/* Executive Header & Description */}
         <div className="px-4">
-          <h1 className="text-display text-ink-900">Inventaris Toko</h1>
+          <h1 className="text-display text-ink-900">Stok & Dagangan Warung</h1>
           <p className="text-caption text-ink-600 mt-1">
-            Pantau ketersediaan barang di rak, sisa hari pemakaian, dan status restock grosir.
+            Pantau barang yang mau habis, barang yang cukup, dan pesan langsung ke toko grosir lewat WhatsApp.
           </p>
         </div>
 
@@ -195,11 +195,11 @@ function StokDashboard() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-caption text-neutral-500 font-medium">Total SKU</span>
-                <span className="text-sm">📦</span>
+                <span className="text-caption text-neutral-500 font-medium">Total Barang</span>
+                <span className="text-sm">🧺</span>
               </div>
-              <p className="text-heading font-bold text-ink-900 mt-1">{overview.total_skus}</p>
-              <p className="text-[11px] text-ink-600">{formatIDR(overview.total_inventory_value_idr)} modal</p>
+              <p className="text-heading font-bold text-ink-900 mt-1">{overview.total_skus} Macam</p>
+              <p className="text-[11px] text-ink-600">{formatIDR(overview.total_inventory_value_idr)} di rak</p>
             </button>
 
             <button
@@ -212,11 +212,11 @@ function StokDashboard() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-caption text-red-700 font-medium">Stok Kritis</span>
+                <span className="text-caption text-red-700 font-medium">Mau Habis!</span>
                 <span className="text-sm">🚨</span>
               </div>
               <p className="text-heading font-bold text-red-800 mt-1">
-                {overview.low_stock_count} SKU
+                {overview.low_stock_count} Macam
               </p>
               <p className="text-[11px] text-red-600 font-medium">&lt; 2 hari habis</p>
             </button>
@@ -235,9 +235,9 @@ function StokDashboard() {
                 <span className="text-sm">⚠️</span>
               </div>
               <p className="text-heading font-bold text-amber-800 mt-1">
-                {overview.waste_risk_count} SKU
+                {overview.waste_risk_count} Macam
               </p>
-              <p className="text-[11px] text-amber-600 font-medium">Perlu promo cepat</p>
+              <p className="text-[11px] text-amber-600 font-medium">Beri promo / obral</p>
             </button>
 
             <button
@@ -254,7 +254,7 @@ function StokDashboard() {
                 <span className="text-sm">✅</span>
               </div>
               <p className="text-heading font-bold text-emerald-800 mt-1">
-                {overview.safe_stock_count} SKU
+                {overview.safe_stock_count} Macam
               </p>
               <p className="text-[11px] text-emerald-600">Cukup &gt; 5 hari</p>
             </button>
@@ -271,7 +271,7 @@ function StokDashboard() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari barang atau SKU (misal: Telur, Gula, Indomie)..."
+              placeholder="Cari nama barang (misal: Telur, Gula, Kopi, Indomie)..."
               className="w-full pl-10 pr-4 py-2.5 bg-canvas border border-border/80 rounded-xl text-body text-ink-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 shadow-sm"
             />
             {searchQuery && (
@@ -285,7 +285,7 @@ function StokDashboard() {
             )}
           </div>
           <p className="text-[11px] text-neutral-500 px-1">
-            💡 <strong>Petunjuk:</strong> Ketik nama produk untuk menyaring stok secara otomatis.
+            💡 <strong>Petunjuk:</strong> Ketik nama barang dagangan untuk mencari langsung tanpa perlu mencari manual satu per satu.
           </p>
         </div>
 
@@ -317,8 +317,8 @@ function StokDashboard() {
             <span className="text-neutral-500 font-medium">Status:</span>
             {[
               { key: "ALL", label: "Semua" },
-              { key: "CRITICAL", label: "🚨 Kritis" },
-              { key: "EXPIRED_RISK", label: "⚠️ Basi" },
+              { key: "CRITICAL", label: "🚨 Mau Habis" },
+              { key: "EXPIRED_RISK", label: "⚠️ Risiko Basi" },
               { key: "LOW", label: "📉 Menipis" },
               { key: "SAFE", label: "✅ Aman" },
               { key: "OVERSTOCK", label: "📦 Menumpuk" },
@@ -346,10 +346,10 @@ function StokDashboard() {
               onChange={(e) => setSortBy(e.target.value as SortOption)}
               className="bg-canvas border border-border/80 text-ink-900 text-caption rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
-              <option value="URGENCY">Tingkat Urgensi</option>
-              <option value="DAYS_ASC">Sisa Hari (Paling Cepat Habis)</option>
-              <option value="VALUE_DESC">Modal Tertinggi</option>
-              <option value="NAME_ASC">Nama (A-Z)</option>
+              <option value="URGENCY">Paling Perlu Belanja</option>
+              <option value="DAYS_ASC">Paling Cepat Habis</option>
+              <option value="VALUE_DESC">Modal Tertinggi di Rak</option>
+              <option value="NAME_ASC">Nama Barang (A-Z)</option>
             </select>
           </div>
         </div>
@@ -359,9 +359,9 @@ function StokDashboard() {
           {filteredItems.length === 0 ? (
             <div className="bg-canvas border border-border/80 rounded-2xl p-8 text-center flex flex-col items-center">
               <span className="text-4xl mb-2">🔍</span>
-              <h3 className="text-heading text-ink-900 font-bold">Tidak ada produk yang cocok</h3>
+              <h3 className="text-heading text-ink-900 font-bold">Barang tidak ditemukan</h3>
               <p className="text-body text-ink-600 mt-1 max-w-xs">
-                Coba ubah kata kunci pencarian atau reset filter kategori dan status.
+                Coba ketik kata kunci lain atau kembalikan pilihan ke semua kategori dan status.
               </p>
               <button
                 type="button"
@@ -372,7 +372,7 @@ function StokDashboard() {
                 }}
                 className="mt-4 px-4 py-2 bg-brand-600 text-white rounded-xl text-caption font-semibold shadow hover:bg-brand-700 transition-colors"
               >
-                Reset Semua Filter
+                Lihat Semua Barang
               </button>
             </div>
           ) : (
@@ -397,19 +397,19 @@ function StokDashboard() {
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[11px] font-semibold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded">
-                          {item.category}
+                          {item.category.replace("_", " ")}
                         </span>
                         {item.perishable && (
-                          <span className="text-[11px] font-semibold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded">
-                            Mudah Basi ({item.shelf_days ? `${item.shelf_days} hr` : "Rentan"})
+                          <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                            Mudah Basi ({item.shelf_days ? `${item.shelf_days} hari` : "Rentan"})
                           </span>
                         )}
                       </div>
                       <h3 className="text-heading font-bold text-ink-900 mt-1">
                         {item.name}
                       </h3>
-                      <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
-                        SKU: {item.sku} {item.pack_display ? `· ${item.pack_display}` : ""}
+                      <p className="text-[11px] text-neutral-500 mt-0.5 font-medium">
+                        {item.pack_display ? `Kemasan grosir: ${item.pack_display}` : `Satuan eceran: ${item.unit}`}
                       </p>
                     </div>
 
@@ -423,17 +423,17 @@ function StokDashboard() {
 
                   {/* Stock Metrics Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-border/50 bg-neutral-50/60 p-2.5 rounded-xl">
-                    {/* Metric 1: Sisa Stok */}
+                    {/* Metric 1: Sisa di Rak */}
                     <div>
-                      <span className="text-[11px] text-neutral-500 block">Stok Saat Ini</span>
+                      <span className="text-[11px] text-neutral-500 block">Sisa di Rak</span>
                       <span className="text-body font-bold text-ink-900">
                         {item.stock_qty} {item.unit}
                       </span>
                     </div>
 
-                    {/* Metric 2: Hari Bertahan */}
+                    {/* Metric 2: Cukup Buat */}
                     <div>
-                      <span className="text-[11px] text-neutral-500 block">Bertahan</span>
+                      <span className="text-[11px] text-neutral-500 block">Cukup Buat</span>
                       <span
                         className={`text-body font-bold ${
                           item.days_of_coverage <= 2
@@ -443,21 +443,21 @@ function StokDashboard() {
                             : "text-emerald-700"
                         }`}
                       >
-                        {item.days_of_coverage} hari
+                        {item.days_of_coverage} hari lagi
                       </span>
                     </div>
 
                     {/* Metric 3: Penjualan Harian */}
                     <div>
-                      <span className="text-[11px] text-neutral-500 block">Perputaran</span>
+                      <span className="text-[11px] text-neutral-500 block">Biasa Laku</span>
                       <span className="text-body font-bold text-ink-900">
-                        ~{item.daily_velocity} {item.unit}/hr
+                        ~{item.daily_velocity} {item.unit} / hari
                       </span>
                     </div>
 
-                    {/* Metric 4: Nilai Modal */}
+                    {/* Metric 4: Modal di Rak */}
                     <div>
-                      <span className="text-[11px] text-neutral-500 block">Nilai di Rak</span>
+                      <span className="text-[11px] text-neutral-500 block">Uang di Rak</span>
                       <span className="text-body font-bold text-ink-900">
                         {formatIDR(item.total_value_idr)}
                       </span>
@@ -467,8 +467,8 @@ function StokDashboard() {
                   {/* Coverage Visual Meter */}
                   <div className="mt-3">
                     <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-1">
-                      <span>Ketahanan Stok (Safety Target: {item.safety_stock} {item.unit})</span>
-                      <span className="font-semibold">{item.days_of_coverage} Hari Pemakaian</span>
+                      <span>Batas Jaga-jaga: Minimal {item.safety_stock} {item.unit} di rak</span>
+                      <span className="font-semibold">{item.days_of_coverage} Hari Penjualan</span>
                     </div>
                     <div className="w-full bg-neutral-200/80 rounded-full h-2 overflow-hidden">
                       <div
@@ -493,7 +493,7 @@ function StokDashboard() {
                     <div className="text-[11px] text-neutral-600">
                       <span>Pemasok: </span>
                       <strong className="text-ink-800">{item.supplier_ref ?? "TOKO GROSIR JAYA"}</strong>
-                      <span className="text-neutral-400 ml-1">· Rp {item.unit_cost_idr.toLocaleString("id-ID")}/{item.unit}</span>
+                      <span className="text-neutral-400 ml-1">· Modal: Rp {item.unit_cost_idr.toLocaleString("id-ID")}/{item.unit}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -502,26 +502,26 @@ function StokDashboard() {
                           type="button"
                           onClick={() => handleQuickReorder(item)}
                           className="w-full sm:w-auto px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-caption rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors"
-                          title="Klik untuk kirim pesan pesanan WhatsApp ke pemasok dan catat ke riwayat"
+                          title="Klik untuk langsung chat pesan pesanan WhatsApp ke toko grosir"
                         >
                           <span>💬</span>
-                          <span>{orderedSku === item.sku ? "✓ Pesanan Dicatat" : "Pesan Grosir"}</span>
+                          <span>{orderedSku === item.sku ? "✓ Pesanan Dicatat" : "Pesan via WA"}</span>
                         </button>
                       ) : isExpiredRisk ? (
                         <Link
                           href={`/?scenario=BASELINE#rec-${item.sku}`}
                           className="w-full sm:w-auto px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-caption rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors"
-                          title="Lihat saran promosi dan bundel diskon"
+                          title="Beri harga diskon atau bundel paket hemat agar segera laku"
                         >
                           <span>🏷️</span>
-                          <span>Beri Promo</span>
+                          <span>Bikin Promo Diskon</span>
                         </Link>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleQuickReorder(item)}
                           className="w-full sm:w-auto px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-ink-700 font-medium text-caption rounded-lg transition-colors flex items-center justify-center gap-1"
-                          title="Kirim pesan WhatsApp pemesanan ke pemasok"
+                          title="Kirim pesan WhatsApp pemesanan ke toko grosir"
                         >
                           <span>💬</span>
                           <span>Kontak Grosir</span>
@@ -534,22 +534,22 @@ function StokDashboard() {
                   <div className="mt-2 text-[11px] text-ink-600 bg-neutral-50 px-2 py-1 rounded border border-neutral-200/50">
                     {isUrgent && (
                       <span>
-                        💡 <strong>Peringatan Habis:</strong> Sisa stok {item.stock_qty} {item.unit} berada di bawah batas aman ({item.safety_stock} {item.unit}). Segera pesan agar rak tidak kosong.
+                        💡 <strong>Peringatan Habis:</strong> Sisa stok {item.stock_qty} {item.unit} berada di bawah batas aman ({item.safety_stock} {item.unit}). Segera pesan agar rak tidak kosong dan pembeli tidak pindah ke warung sebelah.
                       </span>
                     )}
                     {isExpiredRisk && (
                       <span>
-                        💡 <strong>Peringatan Basi:</strong> Produk mudah rusak dengan kecepatan jual melambat. Buat paket hemat atau diskon agar terjual sebelum lewat batas waktu.
+                        💡 <strong>Peringatan Basi:</strong> Barang mudah rusak dan penjualan sedang melambat. Tawarkan ke langganan atau beri diskon paket hemat sebelum tanggalnya lewat.
                       </span>
                     )}
                     {!isUrgent && !isExpiredRisk && item.status === "OVERSTOCK" && (
                       <span>
-                        💡 <strong>Stok Menumpuk:</strong> Sisa stok cukup untuk {item.days_of_coverage} hari. Tahan pembelian ulang agar modal tidak mengendap di rak.
+                        💡 <strong>Stok Menumpuk:</strong> Sisa di rak masih cukup untuk {item.days_of_coverage} hari. Tahan belanja barang ini dulu agar uang kas bisa dipakai kulakan barang yang cepat laku.
                       </span>
                     )}
                     {!isUrgent && !isExpiredRisk && item.status === "SAFE" && (
                       <span>
-                        💡 <strong>Stok Sehat:</strong> Ketersediaan seimbang dengan rata-rata penjualan harian warung.
+                        💡 <strong>Stok Sehat:</strong> Jumlah barang di rak seimbang dengan rata-rata penjualan harian warung.
                       </span>
                     )}
                   </div>
@@ -562,7 +562,7 @@ function StokDashboard() {
         {/* Bottom Educational Footnote */}
         <div className="px-4 py-4 text-center">
           <p className="text-[11px] text-neutral-400">
-            📊 Data inventaris diperbarui otomatis dari foto buku catatan belanja dan perputaran kas harian warung.
+            📊 Data stok dihitung otomatis dari foto buku catatan warung dan perputaran uang kas harian.
           </p>
         </div>
       </div>

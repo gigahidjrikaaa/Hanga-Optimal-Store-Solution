@@ -1,8 +1,8 @@
 /**
- * InventoryHealthBar — Executive stock health widget for the daily briefing page (Tier 1).
+ * InventoryHealthBar — Warung stock health widget for the daily briefing page (Tier 1).
  *
- * Displays a high-level summary of total catalog SKUs, committed working capital,
- * critical stock alerts, and expiration risks, with direct links to the full stock dashboard.
+ * Displays a natural, warung-native summary of total merchandise, working capital
+ * tied up in stock, urgently needed restocks, and spoilage risks.
  */
 
 "use client";
@@ -36,44 +36,44 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
         {/* Header row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl">📊</span>
+            <span className="text-xl">🏪</span>
             <div>
               <h2 className="text-body font-bold text-ink-900 leading-tight">
-                Ringkasan Stok Warung
+                Ringkasan Isi Warung
               </h2>
               <p className="text-caption text-ink-600">
-                {overview.total_skus} produk aktif dipantau
+                {overview.total_skus} macam barang dagangan dipantau
               </p>
             </div>
           </div>
           <Link
             href="/stok"
             className="text-caption font-semibold text-brand-700 hover:text-brand-900 flex items-center gap-1 bg-brand-50 hover:bg-brand-100 px-2.5 py-1.5 rounded-lg transition-colors border border-brand-200"
-            title="Buka katalog lengkap dan kelola stok rak"
+            title="Buka daftar stok lengkap dan rencana belanja"
           >
-            <span>Katalog Lengkap</span>
+            <span>Daftar Stok Lengkap</span>
             <span>→</span>
           </Link>
         </div>
 
         {/* 4 Metric KPI Cards */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {/* Metric 1: Total Modal Stok */}
+          {/* Metric 1: Uang di Barang */}
           <div className="bg-neutral-50/80 border border-neutral-200/70 rounded-xl p-2.5 flex flex-col justify-between">
             <span className="text-caption text-neutral-500 font-medium">
-              Modal di Rak
+              Uang di Barang
             </span>
             <div className="mt-1">
               <span className="text-body font-bold text-ink-900">
                 {formatIDR(overview.total_inventory_value_idr)}
               </span>
               <p className="text-[11px] text-neutral-400 mt-0.5">
-                {overview.total_skus} macam barang
+                Modal tertanam di rak
               </p>
             </div>
           </div>
 
-          {/* Metric 2: Kritis / Perlu Belanja */}
+          {/* Metric 2: Mau Habis / Perlu Belanja */}
           <Link
             href="/stok?status=CRITICAL"
             className={`border rounded-xl p-2.5 flex flex-col justify-between transition-colors ${
@@ -84,13 +84,13 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
           >
             <div className="flex items-center justify-between">
               <span className="text-caption text-red-700 font-medium">
-                Perlu Belanja
+                Mau Habis!
               </span>
               <span className="text-xs">🚨</span>
             </div>
             <div className="mt-1">
               <span className="text-body font-bold text-red-800">
-                {overview.low_stock_count} SKU
+                {overview.low_stock_count} Barang
               </span>
               <p className="text-[11px] text-red-600 font-medium mt-0.5">
                 {criticalOrLow.slice(0, 2).map((i) => i.name.split(" ")[0]).join(", ")}
@@ -99,7 +99,7 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
             </div>
           </Link>
 
-          {/* Metric 3: Risiko Basi / Expired */}
+          {/* Metric 3: Risiko Basi / Rusak */}
           <Link
             href="/stok?status=EXPIRED_RISK"
             className={`border rounded-xl p-2.5 flex flex-col justify-between transition-colors ${
@@ -116,7 +116,7 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
             </div>
             <div className="mt-1">
               <span className="text-body font-bold text-amber-800">
-                {overview.waste_risk_count} SKU
+                {overview.waste_risk_count} Barang
               </span>
               <p className="text-[11px] text-amber-600 font-medium mt-0.5">
                 {wasteRisk.map((i) => i.name.split(" ")[0]).join(", ")}
@@ -137,10 +137,10 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
             </div>
             <div className="mt-1">
               <span className="text-body font-bold text-emerald-800">
-                {overview.safe_stock_count} SKU
+                {overview.safe_stock_count} Barang
               </span>
               <p className="text-[11px] text-emerald-600 mt-0.5">
-                Cukupi 5+ hari
+                Cukup buat &gt; 5 hari
               </p>
             </div>
           </Link>
@@ -150,7 +150,7 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
         <div className="flex items-start gap-1.5 text-[11px] text-ink-600 bg-neutral-100/70 px-2.5 py-1.5 rounded-lg border border-neutral-200/50">
           <span>💡</span>
           <span>
-            <strong>Tips Stok:</strong> Klik kartu di atas untuk filter cepat di daftar stok lengkap atau cek rekomendasi belanja otomatis di bawah.
+            <strong>Tips Warung:</strong> Ketuk kartu di atas untuk melihat barang yang perlu belanja pagi ini atau barang yang butuh diskon sebelum tanggalnya lewat.
           </span>
         </div>
       </div>

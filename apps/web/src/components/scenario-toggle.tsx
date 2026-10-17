@@ -38,10 +38,15 @@ export function ScenarioToggle({
 }: ScenarioToggleProps) {
   return (
     <div className="flex flex-col gap-1.5 px-4">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold text-neutral-500 tracking-wide uppercase">
+          Situasi Warung Hari Ini:
+        </span>
+      </div>
       <div
         className="flex gap-2 overflow-x-auto py-1 scrollbar-none"
         role="tablist"
-        aria-label="Skenario"
+        aria-label="Situasi Warung"
       >
         {SCENARIOS.map((scenario) => {
           const isActive = scenario === active;

@@ -133,14 +133,14 @@ export function formatDelta(delta: number): string {
 
 export const INVENTORY_STATUS_CONFIG = {
   CRITICAL: {
-    label: "Kritis / Habis",
-    shortLabel: "Kritis",
+    label: "Mau Habis! Perlu Belanja",
+    shortLabel: "Mau Habis",
     badgeClass: "bg-red-100 text-red-800 border border-red-300",
     pillClass: "bg-red-500 text-white",
     icon: "🚨",
   },
   EXPIRED_RISK: {
-    label: "Risiko Basi / Expired",
+    label: "Risiko Basi / Rusak",
     shortLabel: "Risiko Basi",
     badgeClass: "bg-amber-100 text-amber-800 border border-amber-300",
     pillClass: "bg-amber-500 text-white",
@@ -154,7 +154,7 @@ export const INVENTORY_STATUS_CONFIG = {
     icon: "📉",
   },
   SAFE: {
-    label: "Stok Aman",
+    label: "Stok Masih Aman",
     shortLabel: "Aman",
     badgeClass: "bg-emerald-100 text-emerald-800 border border-emerald-300",
     pillClass: "bg-emerald-600 text-white",
