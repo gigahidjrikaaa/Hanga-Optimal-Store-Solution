@@ -39,7 +39,7 @@ export function ScenarioToggle({
   return (
     <div className="flex flex-col gap-1.5 px-4">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold text-neutral-500 tracking-wide uppercase">
+        <span className="text-xs font-bold text-neutral-600 tracking-wide uppercase">
           Situasi Warung Hari Ini:
         </span>
       </div>
@@ -58,7 +58,7 @@ export function ScenarioToggle({
               disabled={disabled}
               onClick={() => onSelect(scenario)}
               title={SCENARIO_HINTS[scenario]}
-              className="text-caption whitespace-nowrap px-4 py-2 touch-target pressable"
+              className="text-sm font-semibold whitespace-nowrap px-4 py-2.5 min-h-[44px] touch-target pressable"
               style={{
                 borderRadius: "var(--radius-chip)",
                 backgroundColor: isActive
@@ -66,13 +66,13 @@ export function ScenarioToggle({
                   : "var(--color-surface)",
                 color: isActive
                   ? "white"
-                  : "var(--color-ink-600)",
+                  : "var(--color-ink-900)",
                 border: isActive
                   ? "none"
                   : "1px solid var(--color-border)",
                 transitionDuration: "var(--duration-normal)",
                 transitionTimingFunction: "var(--ease-spring)",
-                transform: isActive ? "scale(1.04)" : "scale(1)",
+                transform: isActive ? "scale(1.03)" : "scale(1)",
                 cursor: disabled ? "not-allowed" : "pointer",
                 opacity: disabled ? 0.5 : 1,
               }}
@@ -82,7 +82,7 @@ export function ScenarioToggle({
           );
         })}
       </div>
-      <p className="text-xs text-ink-600 flex items-center gap-1.5 px-1">
+      <p className="text-xs text-ink-700 font-medium flex items-center gap-1.5 px-1">
         <span>💡</span>
         <span>{SCENARIO_HINTS[active]}</span>
       </p>

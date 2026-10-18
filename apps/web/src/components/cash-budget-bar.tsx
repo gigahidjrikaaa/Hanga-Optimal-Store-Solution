@@ -68,26 +68,26 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
         {/* Input row: cash chips + slider */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
-            <span className="text-caption font-semibold text-brand-800">
+            <span className="text-sm font-bold text-brand-900">
               💵 Kas hari ini
             </span>
             <span
               title="Uang tunai di kasir yang siap dibelanjakan untuk stok hari ini"
-              className="text-xs text-brand-600 bg-brand-200/60 rounded-full px-1.5 py-0.2 cursor-help font-bold"
+              className="text-xs text-brand-700 bg-brand-200/80 rounded-full px-2 py-0.5 cursor-help font-bold"
             >
               ?
             </span>
           </div>
-          <span className="text-numeric text-caption font-bold text-ink-900">
+          <span className="text-numeric text-base font-extrabold text-ink-900">
             {formatIDR(effectiveCash)}
           </span>
         </div>
 
-        <p className="text-xs text-ink-600">
-          💡 Geser slider atau pilih cepat untuk menyesuaikan rekomendasi pesanan dengan modal Anda:
+        <p className="text-xs text-ink-700 font-medium">
+          💡 Geser slider atau ketuk nominal untuk menyesuaikan belanjaan dengan modal Anda:
         </p>
 
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Kas cepat pilih">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Kas cepat pilih">
           {QUICK_CHIPS.map((chip) => {
             const isActive = effectiveCash === chip;
             return (
@@ -98,13 +98,13 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
                 onClick={() => onChange(chip)}
                 aria-pressed={isActive}
                 title={`Pilih nominal kas ${formatIDR(chip)}`}
-                className={`text-caption px-2.5 py-1 font-semibold border pressable disabled:opacity-50 ${
+                className={`min-h-[42px] text-sm px-3.5 py-1.5 font-bold border pressable disabled:opacity-50 touch-target ${
                   isActive
                     ? "bg-brand-600 text-surface border-brand-600 shadow-sm"
-                    : "bg-surface text-ink-600 border-border hover:border-brand-600/40"
+                    : "bg-surface text-ink-900 border-border hover:border-brand-600/40"
                 }`}
                 style={{
-                  borderRadius: "var(--radius-badge)",
+                  borderRadius: "var(--radius-chip)",
                   transitionDuration: "var(--duration-fast)",
                 }}
               >
@@ -114,7 +114,7 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
           })}
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5 py-1">
           <input
             type="range"
             min={SLIDER_MIN}
@@ -125,9 +125,9 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
             onChange={(e) => onChange(Number(e.target.value))}
             aria-label="Atur kas hari ini"
             title="Geser untuk menyesuaikan modal kasir"
-            className="w-full accent-brand-600 disabled:opacity-50 cursor-pointer"
+            className="w-full accent-brand-600 disabled:opacity-50 cursor-pointer h-2.5"
           />
-          <div className="flex justify-between text-[10px] text-ink-600 font-medium">
+          <div className="flex justify-between text-xs text-ink-700 font-semibold">
             <span>{shortIDR(SLIDER_MIN)}</span>
             <span>Rp 1,5jt</span>
             <span>{shortIDR(SLIDER_MAX)}</span>
@@ -136,15 +136,15 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
 
         {/* Fit row */}
         <div className="flex items-center justify-between pt-1">
-          <span className="text-numeric text-caption text-ink-600">
-            Terpakai: <strong className="text-ink-900">{formatIDR(committed)}</strong>
+          <span className="text-numeric text-sm text-ink-700">
+            Terpakai: <strong className="text-ink-900 font-bold">{formatIDR(committed)}</strong>
           </span>
           <span
-            className={`text-numeric text-caption font-semibold ${
+            className={`text-numeric text-sm font-extrabold ${
               overCash ? "text-danger-600" : "text-brand-800"
             }`}
           >
-            Sisa: {formatIDR(remaining)}
+            Sisa Kas: {formatIDR(remaining)}
           </span>
         </div>
 

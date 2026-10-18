@@ -1,14 +1,14 @@
 /**
  * Stok — Warung Merchandise & Stock Health Dashboard (Tier 2).
  *
- * Designed from the ground up for the mental model of warung kelontong owners (Bu Sari):
- * - Search by familiar product names (Telur, Gula, Kopi)
- * - Warung-native categories (Bahan Pokok, Minuman, Camilan, dsb.)
- * - Intuitive stock statuses (Mau Habis, Risiko Basi, Aman, Menumpuk)
- * - Human-friendly coverage: "Cukup Buat: 1-2 hari lagi", "Laku Sehari: ~2 kg"
- * - Wholesale packing context (1 peti = 12 kg, 1 sak = 5 kg, 1 renceng = 10 sachet)
- * - Direct WhatsApp reorder drafting to suppliers (Agen Telur, Toko Grosir Jaya)
- * - Empathetic micro-hints explaining cash-drawer and stockout impacts
+ * Re-architected with an Elder-First UX:
+ * - 2-Tab Focused Architecture:
+ *   1. "🚨 Perlu Belanja (3)" — Instant clarity on what to restock today without noise
+ *   2. "📦 Semua Barang (18)" — Complete catalog with simple search and category filters
+ * - Large, comfortable typography (minimum 14px, 18px+ for primary titles & numbers)
+ * - High-contrast readable ink on clean card surfaces
+ * - Generous 48px+ touch targets for effortless one-handed tapping
+ * - Direct one-tap WhatsApp order drafting to suppliers
  */
 
 "use client";
@@ -25,7 +25,7 @@ import { formatIDR, INVENTORY_STATUS_CONFIG } from "@/lib/design-system";
 import type { InventoryItem, InventoryOverview, InventoryStatus } from "@/types";
 
 const CATEGORIES = [
-  { key: "ALL", label: "Semua Dagangan", icon: "🧺" },
+  { key: "ALL", label: "Semua", icon: "🧺" },
   { key: "BAHAN_POKOK", label: "Bahan Pokok", icon: "🌾" },
   { key: "MINUMAN", label: "Kopi & Minuman", icon: "☕" },
   { key: "SNACK", label: "Camilan & Roti", icon: "🍪" },
@@ -33,17 +33,24 @@ const CATEGORIES = [
   { key: "PERAWATAN", label: "Sabun & Rumah", icon: "🧼" },
 ];
 
+type MainTab = "PERLU_BELANJA" | "SEMUA_BARANG";
 type SortOption = "URGENCY" | "DAYS_ASC" | "VALUE_DESC" | "NAME_ASC";
 
 function StokDashboard() {
   const searchParams = useSearchParams();
-  const initialStatus = searchParams.get("status") as InventoryStatus | null;
+  const urlTab = searchParams.get("tab");
+  const urlStatus = searchParams.get("status") as InventoryStatus | null;
+
+  // Active primary tab
+  const [activeTab, setActiveTab] = useState<MainTab>(
+    urlTab === "semua" ? "SEMUA_BARANG" : "PERLU_BELANJA"
+  );
 
   const [overview, setOverview] = useState<InventoryOverview>(DEMO_INVENTORY);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<string>(initialStatus ?? "ALL");
+  const [selectedStatus, setSelectedStatus] = useState<string>(urlStatus ?? "ALL");
   const [sortBy, setSortBy] = useState<SortOption>("URGENCY");
   const [orderedSku, setOrderedSku] = useState<string | null>(null);
 
@@ -64,15 +71,28 @@ function StokDashboard() {
     loadInventory();
   }, [loadInventory]);
 
-  // Sync status if URL query changes
+  // Sync tab and status if URL query changes
   useEffect(() => {
-    if (initialStatus) {
-      setSelectedStatus(initialStatus);
+    if (urlTab === "semua") {
+      setActiveTab("SEMUA_BARANG");
+    } else if (urlTab === "perlu-belanja") {
+      setActiveTab("PERLU_BELANJA");
     }
-  }, [initialStatus]);
+    if (urlStatus) {
+      setSelectedStatus(urlStatus);
+      setActiveTab("SEMUA_BARANG");
+    }
+  }, [urlTab, urlStatus]);
 
-  // Filter and sort items
-  const filteredItems = useMemo(() => {
+  // Urgent items needing replenishment (< 2.5 days or CRITICAL / LOW)
+  const urgentItems = useMemo(() => {
+    return overview.items.filter(
+      (item) => item.status === "CRITICAL" || item.status === "LOW"
+    );
+  }, [overview.items]);
+
+  // Filter and sort items for the "Semua Barang" catalog tab
+  const allFilteredItems = useMemo(() => {
     return overview.items
       .filter((item) => {
         // Search filter
@@ -151,418 +171,404 @@ function StokDashboard() {
 
   return (
     <AppShell>
-      <div className="flex flex-col gap-4 py-4">
-        {/* Top Branding & Header */}
-        <div className="px-4 flex items-center justify-between border-b border-border/60 pb-3">
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 py-4 max-w-lg mx-auto w-full">
+        {/* Top Header Bar */}
+        <div className="px-4 flex items-center justify-between border-b border-border pb-3">
+          <div className="flex items-center gap-2.5">
             <HangaLogo variant="icon" size="sm" />
             <div>
-              <span className="text-body font-bold text-ink-900 block leading-tight">
+              <span className="text-base font-bold text-ink-900 block leading-tight">
                 Stok & Dagangan
               </span>
-              <span className="text-[11px] text-ink-600 block">
+              <span className="text-xs text-ink-600 block">
                 Warung Bu Sari · Terpantau Otomatis
               </span>
             </div>
           </div>
           <Link
             href="/"
-            className="text-caption font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg border border-brand-200 transition-colors flex items-center gap-1"
+            className="text-sm font-bold text-brand-800 bg-brand-50 hover:bg-brand-100 px-3.5 py-2 rounded-xl border border-brand-200 transition-colors flex items-center gap-1 min-h-[44px] touch-target"
             title="Kembali ke Briefing Harian"
           >
             <span>← Briefing</span>
           </Link>
         </div>
 
-        {/* Executive Header & Description */}
+        {/* Primary Page Title */}
         <div className="px-4">
-          <h1 className="text-display text-ink-900">Stok & Dagangan Warung</h1>
-          <p className="text-caption text-ink-600 mt-1">
-            Pantau barang yang mau habis, barang yang cukup, dan pesan langsung ke toko grosir lewat WhatsApp.
+          <h1 className="text-2xl font-extrabold text-ink-900 tracking-tight">
+            Stok & Dagangan Warung
+          </h1>
+          <p className="text-sm text-ink-600 mt-1">
+            Pantau barang yang mau habis dan pesan langsung ke toko grosir lewat WhatsApp.
           </p>
         </div>
 
-        {/* Quick KPI Stat Chips (Clickable Filters) */}
+        {/* PRIMARY 2-TAB SEGMENTED CONTROLLER (Elder-Friendly, Big Touch Targets) */}
         <div className="px-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 p-1.5 bg-neutral-200/70 rounded-2xl gap-1">
             <button
               type="button"
-              onClick={() => setSelectedStatus("ALL")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                selectedStatus === "ALL"
-                  ? "bg-brand-50 border-brand-500 ring-2 ring-brand-300"
-                  : "bg-canvas border-border/80 hover:bg-neutral-50"
+              onClick={() => setActiveTab("PERLU_BELANJA")}
+              className={`min-h-[48px] py-2.5 px-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 touch-target ${
+                activeTab === "PERLU_BELANJA"
+                  ? "bg-white text-red-700 shadow-sm border border-red-200"
+                  : "text-ink-600 hover:text-ink-900"
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-caption text-neutral-500 font-medium">Total Barang</span>
-                <span className="text-sm">🧺</span>
-              </div>
-              <p className="text-heading font-bold text-ink-900 mt-1">{overview.total_skus} Macam</p>
-              <p className="text-[11px] text-ink-600">{formatIDR(overview.total_inventory_value_idr)} di rak</p>
+              <span className="text-base">🚨</span>
+              <span>Perlu Belanja ({urgentItems.length})</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setSelectedStatus(selectedStatus === "CRITICAL" ? "ALL" : "CRITICAL")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                selectedStatus === "CRITICAL"
-                  ? "bg-red-100 border-red-500 ring-2 ring-red-300"
-                  : "bg-red-50/60 border-red-200 hover:bg-red-100/50"
+              onClick={() => setActiveTab("SEMUA_BARANG")}
+              className={`min-h-[48px] py-2.5 px-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 touch-target ${
+                activeTab === "SEMUA_BARANG"
+                  ? "bg-white text-ink-900 shadow-sm border border-neutral-300"
+                  : "text-ink-600 hover:text-ink-900"
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-caption text-red-700 font-medium">Mau Habis!</span>
-                <span className="text-sm">🚨</span>
-              </div>
-              <p className="text-heading font-bold text-red-800 mt-1">
-                {overview.low_stock_count} Macam
-              </p>
-              <p className="text-[11px] text-red-600 font-medium">&lt; 2 hari habis</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedStatus(selectedStatus === "EXPIRED_RISK" ? "ALL" : "EXPIRED_RISK")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                selectedStatus === "EXPIRED_RISK"
-                  ? "bg-amber-100 border-amber-500 ring-2 ring-amber-300"
-                  : "bg-amber-50/60 border-amber-200 hover:bg-amber-100/50"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-caption text-amber-700 font-medium">Risiko Basi</span>
-                <span className="text-sm">⚠️</span>
-              </div>
-              <p className="text-heading font-bold text-amber-800 mt-1">
-                {overview.waste_risk_count} Macam
-              </p>
-              <p className="text-[11px] text-amber-600 font-medium">Beri promo / obral</p>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedStatus(selectedStatus === "SAFE" ? "ALL" : "SAFE")}
-              className={`p-3 rounded-xl border text-left transition-all ${
-                selectedStatus === "SAFE"
-                  ? "bg-emerald-100 border-emerald-500 ring-2 ring-emerald-300"
-                  : "bg-emerald-50/60 border-emerald-200 hover:bg-emerald-100/50"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-caption text-emerald-700 font-medium">Stok Aman</span>
-                <span className="text-sm">✅</span>
-              </div>
-              <p className="text-heading font-bold text-emerald-800 mt-1">
-                {overview.safe_stock_count} Macam
-              </p>
-              <p className="text-[11px] text-emerald-600">Cukup &gt; 5 hari</p>
+              <span className="text-base">📦</span>
+              <span>Semua Stok ({overview.total_skus})</span>
             </button>
           </div>
         </div>
 
-        {/* Search Bar & Micro Hint */}
-        <div className="px-4 flex flex-col gap-2">
-          <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-600 text-base">
-              🔍
-            </span>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama barang (misal: Telur, Gula, Kopi, Indomie)..."
-              className="w-full pl-10 pr-4 py-2.5 bg-canvas border border-border/80 rounded-xl text-body text-ink-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 shadow-sm"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-caption text-neutral-400 hover:text-ink-600 bg-neutral-100 rounded-full w-5 h-5 flex items-center justify-center"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          <p className="text-[11px] text-neutral-500 px-1">
-            💡 <strong>Petunjuk:</strong> Ketik nama barang dagangan untuk mencari langsung tanpa perlu mencari manual satu per satu.
-          </p>
-        </div>
-
-        {/* Category Filter Pills (Horizontal Scroll) */}
-        <div className="px-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.key}
-                type="button"
-                onClick={() => setSelectedCategory(cat.key)}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-caption font-semibold flex items-center gap-1.5 transition-all ${
-                  selectedCategory === cat.key
-                    ? "bg-brand-600 text-white shadow-sm"
-                    : "bg-neutral-100 text-ink-600 hover:bg-neutral-200"
-                }`}
-              >
-                <span>{cat.icon}</span>
-                <span>{cat.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Status Filter & Sort Row */}
-        <div className="px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-caption">
-          {/* Status Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            <span className="text-neutral-500 font-medium">Status:</span>
-            {[
-              { key: "ALL", label: "Semua" },
-              { key: "CRITICAL", label: "🚨 Mau Habis" },
-              { key: "EXPIRED_RISK", label: "⚠️ Risiko Basi" },
-              { key: "LOW", label: "📉 Menipis" },
-              { key: "SAFE", label: "✅ Aman" },
-              { key: "OVERSTOCK", label: "📦 Menumpuk" },
-            ].map((st) => (
-              <button
-                key={st.key}
-                type="button"
-                onClick={() => setSelectedStatus(st.key)}
-                className={`px-2.5 py-1 rounded-lg text-caption font-medium transition-colors ${
-                  selectedStatus === st.key
-                    ? "bg-brand-100 text-brand-900 border border-brand-500 font-semibold"
-                    : "bg-neutral-100/80 text-ink-600 hover:bg-neutral-200/80 border border-transparent"
-                }`}
-              >
-                {st.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Sort Selector */}
-          <div className="flex items-center gap-1.5 justify-end">
-            <span className="text-neutral-500 font-medium whitespace-nowrap">Urutkan:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="bg-canvas border border-border/80 text-ink-900 text-caption rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            >
-              <option value="URGENCY">Paling Perlu Belanja</option>
-              <option value="DAYS_ASC">Paling Cepat Habis</option>
-              <option value="VALUE_DESC">Modal Tertinggi di Rak</option>
-              <option value="NAME_ASC">Nama Barang (A-Z)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Product Cards List */}
-        <div className="px-4 flex flex-col gap-3">
-          {filteredItems.length === 0 ? (
-            <div className="bg-canvas border border-border/80 rounded-2xl p-8 text-center flex flex-col items-center">
-              <span className="text-4xl mb-2">🔍</span>
-              <h3 className="text-heading text-ink-900 font-bold">Barang tidak ditemukan</h3>
-              <p className="text-body text-ink-600 mt-1 max-w-xs">
-                Coba ketik kata kunci lain atau kembalikan pilihan ke semua kategori dan status.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("ALL");
-                  setSelectedStatus("ALL");
-                }}
-                className="mt-4 px-4 py-2 bg-brand-600 text-white rounded-xl text-caption font-semibold shadow hover:bg-brand-700 transition-colors"
-              >
-                Lihat Semua Barang
-              </button>
+        {/* ========================================================================= */}
+        {/* TAB 1: PERLU BELANJA (Action-First, Low Cognitive Load)                   */}
+        {/* ========================================================================= */}
+        {activeTab === "PERLU_BELANJA" && (
+          <div className="px-4 flex flex-col gap-3">
+            <div className="bg-red-50/80 border border-red-200 rounded-2xl p-3.5 flex items-start gap-2.5">
+              <span className="text-2xl">🚨</span>
+              <div>
+                <h2 className="text-base font-bold text-red-950">
+                  Daftar Belanja Prioritas Pagi Ini
+                </h2>
+                <p className="text-sm text-red-800 mt-0.5">
+                  Ada <strong>{urgentItems.length} barang</strong> yang stoknya hampir habis. Pesan pagi ini agar langganan tidak kecewa.
+                </p>
+              </div>
             </div>
-          ) : (
-            filteredItems.map((item) => {
-              const statusCfg = INVENTORY_STATUS_CONFIG[item.status];
-              const isUrgent = item.status === "CRITICAL" || item.status === "LOW";
-              const isExpiredRisk = item.status === "EXPIRED_RISK";
 
-              return (
-                <div
-                  key={item.sku}
-                  className={`bg-canvas border rounded-2xl p-4 shadow-sm transition-all hover:shadow-md ${
-                    isUrgent
-                      ? "border-red-300 ring-1 ring-red-200"
-                      : isExpiredRisk
-                      ? "border-amber-300 ring-1 ring-amber-200"
-                      : "border-border/80"
-                  }`}
-                >
-                  {/* Card Header: Product Name + Status Badge */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[11px] font-semibold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded">
-                          {item.category.replace("_", " ")}
-                        </span>
-                        {item.perishable && (
-                          <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
-                            Mudah Basi ({item.shelf_days ? `${item.shelf_days} hari` : "Rentan"})
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-heading font-bold text-ink-900 mt-1">
-                        {item.name}
-                      </h3>
-                      <p className="text-[11px] text-neutral-500 mt-0.5 font-medium">
-                        {item.pack_display ? `Kemasan grosir: ${item.pack_display}` : `Satuan eceran: ${item.unit}`}
-                      </p>
-                    </div>
+            {urgentItems.map((item) => (
+              <div
+                key={item.sku}
+                className="bg-surface border-2 border-red-300 rounded-2xl p-4 shadow-sm flex flex-col gap-3.5"
+              >
+                {/* Title & Status Badge */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-xs font-bold text-red-700 bg-red-100 px-2.5 py-1 rounded-md uppercase tracking-wide">
+                      Mau Habis!
+                    </span>
+                    <h3 className="text-lg font-extrabold text-ink-900 mt-1.5 leading-snug">
+                      {item.name}
+                    </h3>
+                    <p className="text-sm font-semibold text-neutral-600 mt-0.5">
+                      {item.pack_display ?? item.unit}
+                    </p>
+                  </div>
+                  <span className="text-2xl">🚨</span>
+                </div>
 
-                    <span
-                      className={`text-caption font-bold px-2.5 py-1 rounded-full whitespace-nowrap flex items-center gap-1 ${statusCfg.badgeClass}`}
-                    >
-                      <span>{statusCfg.icon}</span>
-                      <span>{statusCfg.shortLabel}</span>
+                {/* Sisa & Cukup Buat (Large, High Contrast Numbers) */}
+                <div className="grid grid-cols-2 gap-2 bg-red-50/50 border border-red-100 rounded-xl p-3">
+                  <div>
+                    <span className="text-xs text-neutral-500 font-medium block">
+                      Sisa di Rak Saat Ini
+                    </span>
+                    <span className="text-lg font-black text-ink-900 block mt-0.5">
+                      {item.stock_qty} {item.unit}
                     </span>
                   </div>
 
-                  {/* Stock Metrics Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-border/50 bg-neutral-50/60 p-2.5 rounded-xl">
-                    {/* Metric 1: Sisa di Rak */}
-                    <div>
-                      <span className="text-[11px] text-neutral-500 block">Sisa di Rak</span>
-                      <span className="text-body font-bold text-ink-900">
-                        {item.stock_qty} {item.unit}
-                      </span>
-                    </div>
+                  <div>
+                    <span className="text-xs text-neutral-500 font-medium block">
+                      Perkiraan Bertahan
+                    </span>
+                    <span className="text-lg font-black text-red-700 block mt-0.5">
+                      {item.days_of_coverage} hari lagi
+                    </span>
+                  </div>
+                </div>
 
-                    {/* Metric 2: Cukup Buat */}
-                    <div>
-                      <span className="text-[11px] text-neutral-500 block">Cukup Buat</span>
+                {/* Supplier & Price Info */}
+                <div className="text-sm text-ink-700 flex items-center justify-between border-t border-border pt-2.5">
+                  <span>
+                    Pemasok: <strong>{item.supplier_ref ?? "Toko Grosir"}</strong>
+                  </span>
+                  <span className="font-semibold text-ink-900">
+                    Modal: {formatIDR(item.unit_cost_idr)}/{item.unit}
+                  </span>
+                </div>
+
+                {/* Big Generous WhatsApp CTA (Min 48px Height) */}
+                <button
+                  type="button"
+                  onClick={() => handleQuickReorder(item)}
+                  className="w-full min-h-[50px] py-3 px-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-extrabold text-base rounded-xl shadow flex items-center justify-center gap-2 transition-transform active:scale-[0.98] touch-target"
+                >
+                  <span className="text-xl">💬</span>
+                  <span>
+                    {orderedSku === item.sku
+                      ? "✓ Pesanan Tercatat di Hanga!"
+                      : `Pesan ${item.name.split(" ")[0]} via WhatsApp`}
+                  </span>
+                </button>
+              </div>
+            ))}
+
+            {/* Switch to Full Catalog Footer Link */}
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={() => setActiveTab("SEMUA_BARANG")}
+                className="text-sm font-bold text-brand-700 hover:text-brand-900 underline py-2 min-h-[44px] touch-target"
+              >
+                Lihat Semua ({overview.total_skus}) Barang Dagangan Lainnya →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 2: SEMUA BARANG (Complete Catalog with Simple Search & Filters)       */}
+        {/* ========================================================================= */}
+        {activeTab === "SEMUA_BARANG" && (
+          <div className="px-4 flex flex-col gap-3">
+            {/* Simple Search Input */}
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-lg">
+                🔍
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari barang (Telur, Gula, Kopi, Indomie)..."
+                className="w-full pl-11 pr-10 py-3 min-h-[48px] bg-surface border border-neutral-300 rounded-xl text-base text-ink-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-ink-600 w-8 h-8 flex items-center justify-center text-sm"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Category Pills (Horizontal Scroll) */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full scroll-smooth">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.key)}
+                  className={`min-h-[44px] shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
+                    selectedCategory === cat.key
+                      ? "bg-brand-600 text-white shadow-sm"
+                      : "bg-surface border border-neutral-300 text-ink-800 hover:bg-neutral-100"
+                  }`}
+                >
+                  <span className="text-base">{cat.icon}</span>
+                  <span>{cat.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Status Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full scroll-smooth text-sm">
+              <span className="text-neutral-500 font-semibold mr-0.5 shrink-0">Status:</span>
+              {[
+                { key: "ALL", label: "Semua" },
+                { key: "CRITICAL", label: "🚨 Mau Habis" },
+                { key: "EXPIRED_RISK", label: "⚠️ Risiko Basi" },
+                { key: "LOW", label: "📉 Menipis" },
+                { key: "SAFE", label: "✅ Aman" },
+                { key: "OVERSTOCK", label: "📦 Menumpuk" },
+              ].map((st) => (
+                <button
+                  key={st.key}
+                  type="button"
+                  onClick={() => setSelectedStatus(st.key)}
+                  className={`min-h-[42px] shrink-0 whitespace-nowrap px-3.5 py-2 rounded-xl text-sm font-bold transition-colors ${
+                    selectedStatus === st.key
+                      ? "bg-brand-100 text-brand-900 border-2 border-brand-600 shadow-xs"
+                      : "bg-surface border border-neutral-300 text-ink-700 hover:bg-neutral-100 font-medium"
+                  }`}
+                >
+                  {st.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="flex items-center justify-between text-sm py-1">
+              <span className="text-neutral-600 font-medium">
+                Menampilkan <strong>{allFilteredItems.length}</strong> barang
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-neutral-500">Urut:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="bg-surface border border-neutral-300 text-ink-900 text-sm font-medium rounded-lg px-2.5 py-1.5 min-h-[40px] focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="URGENCY">Perlu Belanja Dulu</option>
+                  <option value="DAYS_ASC">Paling Cepat Habis</option>
+                  <option value="VALUE_DESC">Modal Terbesar</option>
+                  <option value="NAME_ASC">Nama (A-Z)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Catalog Items List */}
+            {allFilteredItems.length === 0 ? (
+              <div className="bg-surface border border-neutral-300 rounded-2xl p-8 text-center flex flex-col items-center">
+                <span className="text-4xl mb-2">🔍</span>
+                <h3 className="text-base font-bold text-ink-900">Barang tidak ditemukan</h3>
+                <p className="text-sm text-ink-600 mt-1">
+                  Coba kata kunci lain atau bersihkan pilihan filter.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedCategory("ALL");
+                    setSelectedStatus("ALL");
+                  }}
+                  className="mt-4 min-h-[44px] px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold shadow hover:bg-brand-700"
+                >
+                  Tampilkan Semua Barang
+                </button>
+              </div>
+            ) : (
+              allFilteredItems.map((item) => {
+                const statusCfg = INVENTORY_STATUS_CONFIG[item.status];
+                const isUrgent = item.status === "CRITICAL" || item.status === "LOW";
+                const isExpiredRisk = item.status === "EXPIRED_RISK";
+
+                return (
+                  <div
+                    key={item.sku}
+                    className={`bg-surface border rounded-2xl p-4 shadow-sm flex flex-col gap-3 ${
+                      isUrgent
+                        ? "border-2 border-red-300 ring-1 ring-red-100"
+                        : isExpiredRisk
+                        ? "border-2 border-amber-300 ring-1 ring-amber-100"
+                        : "border-border"
+                    }`}
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded">
+                            {item.category.replace("_", " ")}
+                          </span>
+                          {item.perishable && (
+                            <span className="text-xs font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+                              Mudah Basi
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-base font-bold text-ink-900 mt-1">
+                          {item.name}
+                        </h3>
+                        <p className="text-xs text-neutral-500 mt-0.5">
+                          {item.pack_display ? `Kemasan grosir: ${item.pack_display}` : `Satuan: ${item.unit}`}
+                        </p>
+                      </div>
+
                       <span
-                        className={`text-body font-bold ${
-                          item.days_of_coverage <= 2
-                            ? "text-red-700"
-                            : item.days_of_coverage <= 4
-                            ? "text-amber-700"
-                            : "text-emerald-700"
-                        }`}
+                        className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap flex items-center gap-1 ${statusCfg.badgeClass}`}
                       >
-                        {item.days_of_coverage} hari lagi
+                        <span>{statusCfg.icon}</span>
+                        <span>{statusCfg.shortLabel}</span>
                       </span>
                     </div>
 
-                    {/* Metric 3: Penjualan Harian */}
-                    <div>
-                      <span className="text-[11px] text-neutral-500 block">Biasa Laku</span>
-                      <span className="text-body font-bold text-ink-900">
-                        ~{item.daily_velocity} {item.unit} / hari
+                    {/* Stock & Coverage Row */}
+                    <div className="grid grid-cols-3 gap-2 bg-neutral-50 border border-neutral-200/80 rounded-xl p-2.5 text-center">
+                      <div>
+                        <span className="text-xs text-neutral-500 block">Sisa di Rak</span>
+                        <span className="text-sm font-bold text-ink-900 block mt-0.5">
+                          {item.stock_qty} {item.unit}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-xs text-neutral-500 block">Cukup Buat</span>
+                        <span
+                          className={`text-sm font-bold block mt-0.5 ${
+                            item.days_of_coverage <= 2
+                              ? "text-red-700 font-extrabold"
+                              : item.days_of_coverage <= 4
+                              ? "text-amber-700"
+                              : "text-emerald-700"
+                          }`}
+                        >
+                          {item.days_of_coverage} hari
+                        </span>
+                      </div>
+
+                      <div>
+                        <span className="text-xs text-neutral-500 block">Uang di Rak</span>
+                        <span className="text-sm font-bold text-ink-900 block mt-0.5">
+                          {formatIDR(item.total_value_idr)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Supplier & Action */}
+                    <div className="flex items-center justify-between gap-2 border-t border-border pt-2.5 text-sm">
+                      <span className="text-xs text-neutral-600">
+                        Pemasok: <strong>{item.supplier_ref ?? "Toko Grosir"}</strong>
                       </span>
-                    </div>
 
-                    {/* Metric 4: Modal di Rak */}
-                    <div>
-                      <span className="text-[11px] text-neutral-500 block">Uang di Rak</span>
-                      <span className="text-body font-bold text-ink-900">
-                        {formatIDR(item.total_value_idr)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Coverage Visual Meter */}
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-1">
-                      <span>Batas Jaga-jaga: Minimal {item.safety_stock} {item.unit} di rak</span>
-                      <span className="font-semibold">{item.days_of_coverage} Hari Penjualan</span>
-                    </div>
-                    <div className="w-full bg-neutral-200/80 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          item.days_of_coverage <= 2
-                            ? "bg-red-500"
-                            : item.days_of_coverage <= 4
-                            ? "bg-amber-500"
-                            : item.days_of_coverage >= 20
-                            ? "bg-slate-400"
-                            : "bg-emerald-500"
-                        }`}
-                        style={{
-                          width: `${Math.min(100, Math.max(8, (item.days_of_coverage / 14) * 100))}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Supplier & Action Row */}
-                  <div className="mt-3 pt-3 border-t border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="text-[11px] text-neutral-600">
-                      <span>Pemasok: </span>
-                      <strong className="text-ink-800">{item.supplier_ref ?? "TOKO GROSIR JAYA"}</strong>
-                      <span className="text-neutral-400 ml-1">· Modal: Rp {item.unit_cost_idr.toLocaleString("id-ID")}/{item.unit}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
                       {isUrgent ? (
                         <button
                           type="button"
                           onClick={() => handleQuickReorder(item)}
-                          className="w-full sm:w-auto px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-caption rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors"
-                          title="Klik untuk langsung chat pesan pesanan WhatsApp ke toko grosir"
+                          className="min-h-[42px] px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl flex items-center gap-1.5 shadow-sm touch-target"
                         >
                           <span>💬</span>
-                          <span>{orderedSku === item.sku ? "✓ Pesanan Dicatat" : "Pesan via WA"}</span>
+                          <span>{orderedSku === item.sku ? "✓ Dicatat" : "Pesan WA"}</span>
                         </button>
                       ) : isExpiredRisk ? (
                         <Link
                           href={`/?scenario=BASELINE#rec-${item.sku}`}
-                          className="w-full sm:w-auto px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-caption rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors"
-                          title="Beri harga diskon atau bundel paket hemat agar segera laku"
+                          className="min-h-[42px] px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl flex items-center gap-1.5 shadow-sm touch-target"
                         >
                           <span>🏷️</span>
-                          <span>Bikin Promo Diskon</span>
+                          <span>Beri Promo</span>
                         </Link>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleQuickReorder(item)}
-                          className="w-full sm:w-auto px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-ink-700 font-medium text-caption rounded-lg transition-colors flex items-center justify-center gap-1"
-                          title="Kirim pesan WhatsApp pemesanan ke toko grosir"
+                          className="min-h-[42px] px-3.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-ink-800 font-semibold text-sm rounded-xl flex items-center gap-1 border border-neutral-300 touch-target"
                         >
                           <span>💬</span>
-                          <span>Kontak Grosir</span>
+                          <span>Kontak</span>
                         </button>
                       )}
                     </div>
                   </div>
+                );
+              })
+            )}
+          </div>
+        )}
 
-                  {/* Context Micro-Hint */}
-                  <div className="mt-2 text-[11px] text-ink-600 bg-neutral-50 px-2 py-1 rounded border border-neutral-200/50">
-                    {isUrgent && (
-                      <span>
-                        💡 <strong>Peringatan Habis:</strong> Sisa stok {item.stock_qty} {item.unit} berada di bawah batas aman ({item.safety_stock} {item.unit}). Segera pesan agar rak tidak kosong dan pembeli tidak pindah ke warung sebelah.
-                      </span>
-                    )}
-                    {isExpiredRisk && (
-                      <span>
-                        💡 <strong>Peringatan Basi:</strong> Barang mudah rusak dan penjualan sedang melambat. Tawarkan ke langganan atau beri diskon paket hemat sebelum tanggalnya lewat.
-                      </span>
-                    )}
-                    {!isUrgent && !isExpiredRisk && item.status === "OVERSTOCK" && (
-                      <span>
-                        💡 <strong>Stok Menumpuk:</strong> Sisa di rak masih cukup untuk {item.days_of_coverage} hari. Tahan belanja barang ini dulu agar uang kas bisa dipakai kulakan barang yang cepat laku.
-                      </span>
-                    )}
-                    {!isUrgent && !isExpiredRisk && item.status === "SAFE" && (
-                      <span>
-                        💡 <strong>Stok Sehat:</strong> Jumlah barang di rak seimbang dengan rata-rata penjualan harian warung.
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Bottom Educational Footnote */}
+        {/* Bottom Reassurance Footnote */}
         <div className="px-4 py-4 text-center">
-          <p className="text-[11px] text-neutral-400">
-            📊 Data stok dihitung otomatis dari foto buku catatan warung dan perputaran uang kas harian.
+          <p className="text-xs text-neutral-400">
+            📊 Data stok dihitung otomatis dari foto buku catatan warung dan perputaran kas harian.
           </p>
         </div>
       </div>
