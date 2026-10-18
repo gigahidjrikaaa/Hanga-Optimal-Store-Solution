@@ -15,22 +15,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HangaLogo } from "@/components/hanga-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { useAuth } from "@/lib/auth-context";
+import { useLanguage } from "@/lib/i18n/context";
 
 type Mode = "masuk" | "daftar";
-
-function greetingForNow(): string {
-  const hour = new Date().getHours();
-  if (hour < 11) return "Selamat pagi, Bu 👋";
-  if (hour < 15) return "Selamat siang, Bu 👋";
-  if (hour < 19) return "Selamat sore, Bu 👋";
-  return "Selamat malam, Bu 👋";
-}
 
 export default function MasukPage() {
   const router = useRouter();
   const { user, isLoading, signIn, signUp, signInWithGoogle, signInDemo } =
     useAuth();
+  const { t } = useLanguage();
 
   const [mode, setMode] = useState<Mode>("masuk");
   const [name, setName] = useState("");
@@ -42,7 +37,13 @@ export default function MasukPage() {
   const [showShutter, setShowShutter] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
 
-  const greeting = useMemo(greetingForNow, []);
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 11) return t.auth.morningGreeting;
+    if (hour < 15) return t.auth.afternoonGreeting;
+    if (hour < 19) return t.auth.eveningGreeting;
+    return t.auth.nightGreeting;
+  }, [t.auth]);
   const nextPath = useMemo(() => {
     if (typeof window === "undefined") return "/";
     const next = new URLSearchParams(window.location.search).get("next");
@@ -121,16 +122,17 @@ export default function MasukPage() {
 
       {/* Content */}
       <div className="relative flex-1 flex flex-col mx-auto w-full max-w-[480px] px-5 pt-10 pb-16">
-        {/* Brand */}
-        <div className="rise-in" style={{ animationDelay: "0ms" }}>
+        {/* Brand Header */}
+        <div className="rise-in flex items-center justify-between" style={{ animationDelay: "0ms" }}>
           <HangaLogo variant="full" size="md" />
+          <LanguageSwitcher variant="compact" />
         </div>
 
         {/* Greeting */}
         <div className="rise-in mt-8" style={{ animationDelay: "90ms" }}>
           <h1 className="text-display text-ink-900">{greeting}</h1>
           <p className="text-body text-ink-600 mt-1">
-            Masuk untuk membuka briefing hari ini.
+            {t.auth.loginSubtitle}
           </p>
         </div>
 
@@ -166,7 +168,7 @@ export default function MasukPage() {
                 key={m}
                 type="button"
                 role="tab"
-                title={m === "masuk" ? "Buka warung dengan akun terdaftar" : "Buat akun baru untuk warung Anda"}
+                title={m === "masuk" ? t.auth.tabLogin : t.auth.tabRegister}
                 aria-selected={mode === m}
                 onClick={() => {
                   setMode(m);
@@ -177,7 +179,7 @@ export default function MasukPage() {
                 }`}
                 style={{ borderRadius: "var(--radius-badge)", transitionDuration: "var(--duration-fast)" }}
               >
-                {m === "masuk" ? "Masuk" : "Daftar"}
+                {m === "masuk" ? t.auth.tabLogin : t.auth.tabRegister}
               </button>
             ))}
           </div>
@@ -200,75 +202,75 @@ export default function MasukPage() {
             {mode === "daftar" && (
               <div className="flex flex-col gap-1">
                 <label htmlFor="name" className="text-caption text-ink-600 font-medium">
-                  Nama pemilik warung
+                  {t.auth.nameLabel}
                 </label>
                 <input
                   id="name"
                   type="text"
-                  placeholder="contoh: Bu Sari atau Pak Joko"
+                  placeholder={t.auth.namePlaceholder}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
-                  title="Nama pemilik warung untuk sapaan dan kop pesan grosir"
+                  title={t.auth.nameLabel}
                   className="touch-target w-full px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
                   style={{ borderRadius: "var(--radius-chip)" }}
                 />
                 <p className="text-caption text-ink-600 flex items-center gap-1">
                   <span>💡</span>
-                  <span>Sapaan hangat di briefing pagi dan pesan belanja.</span>
+                  <span>{t.auth.nameHint}</span>
                 </p>
               </div>
             )}
 
             <div className="flex flex-col gap-1">
               <label htmlFor="email" className="text-caption text-ink-600 font-medium">
-                Email warung
+                {t.auth.emailLabel}
               </label>
               <input
                 id="email"
                 type="email"
-                placeholder="contoh: busari@warung.com"
+                placeholder={t.auth.emailPlaceholder}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 inputMode="email"
                 autoFocus
-                title="Alamat email untuk masuk ke warung Anda"
+                title={t.auth.emailLabel}
                 className="touch-target w-full px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
                 style={{ borderRadius: "var(--radius-chip)" }}
               />
               <p className="text-caption text-ink-600 flex items-center gap-1">
                 <span>💡</span>
-                <span>Digunakan sebagai tanda pengenal toko Anda.</span>
+                <span>{t.auth.emailHint}</span>
               </p>
             </div>
 
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
                 <label htmlFor="password" className="text-caption text-ink-600 font-medium">
-                  Kata sandi
+                  {t.auth.passwordLabel}
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-pressed={showPassword}
                   aria-label={
-                    showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"
+                    showPassword ? t.auth.hidePassword : t.auth.showPassword
                   }
-                  title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  title={showPassword ? t.auth.hidePassword : t.auth.showPassword}
                   className="touch-target text-caption text-ink-600 font-medium hover:text-ink-900"
                 >
-                  {showPassword ? "🙈 Sembunyikan" : "👁️ Tampilkan"}
+                  {showPassword ? t.auth.hidePassword : t.auth.showPassword}
                 </button>
               </div>
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Minimal 8 karakter"
+                placeholder={t.auth.passwordPlaceholder}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={mode === "masuk" ? "current-password" : "new-password"}
-                title="Kata sandi minimal 8 karakter"
+                title={t.auth.passwordLabel}
                 className={`touch-target w-full px-3 text-body text-ink-900 bg-canvas border focus:outline-none ${
                   isPasswordTooShort
                     ? "border-warn-600"
@@ -279,12 +281,12 @@ export default function MasukPage() {
               {isPasswordTooShort ? (
                 <p className="text-caption text-warn-600 flex items-center gap-1">
                   <span>⚠️</span>
-                  <span>Minimal 8 karakter — panjang lebih baik daripada rumit.</span>
+                  <span>{t.auth.passwordTooShort}</span>
                 </p>
               ) : (
                 <p className="text-caption text-ink-600 flex items-center gap-1">
                   <span>💡</span>
-                  <span>Gunakan kata yang mudah Anda ingat.</span>
+                  <span>{t.auth.passwordSafe}</span>
                 </p>
               )}
             </div>
@@ -292,7 +294,7 @@ export default function MasukPage() {
             <button
               type="submit"
               disabled={!canSubmit}
-              title={mode === "masuk" ? "Buka warung dan lihat briefing hari ini" : "Daftarkan akun dan buka warung"}
+              title={mode === "masuk" ? t.auth.loginBtn : t.auth.registerBtn}
               className="touch-target w-full flex items-center justify-center gap-2 text-body font-semibold text-surface pressable disabled:opacity-50"
               style={{
                 borderRadius: "var(--radius-card)",
@@ -301,16 +303,16 @@ export default function MasukPage() {
             >
               {isBusy && mode === "masuk" ? (
                 <>
-                  <span className="spinner" aria-hidden="true" /> Memeriksa…
+                  <span className="spinner" aria-hidden="true" /> {t.auth.checking}
                 </>
               ) : isBusy ? (
                 <>
-                  <span className="spinner" aria-hidden="true" /> Menyiapkan…
+                  <span className="spinner" aria-hidden="true" /> {t.auth.preparing}
                 </>
               ) : mode === "masuk" ? (
-                "Masuk ke Warung 🚪"
+                t.auth.loginBtn
               ) : (
-                "Buat Akun Warung ✨"
+                t.auth.registerBtn
               )}
             </button>
           </form>
@@ -318,7 +320,7 @@ export default function MasukPage() {
           {/* Divider */}
           <div className="flex items-center gap-3">
             <span className="flex-1 h-px bg-border" />
-            <span className="text-caption text-neutral-400">atau</span>
+            <span className="text-caption text-neutral-400">{t.auth.orDivider}</span>
             <span className="flex-1 h-px bg-border" />
           </div>
 
@@ -327,7 +329,7 @@ export default function MasukPage() {
             type="button"
             onClick={handleGoogle}
             disabled={isBusy}
-            title="Masuk cepat menggunakan akun Google"
+            title={t.auth.googleBtn}
             className="touch-target w-full flex items-center justify-center gap-3 text-body font-semibold text-ink-900 bg-surface border border-border pressable disabled:opacity-50"
             style={{ borderRadius: "var(--radius-card)" }}
           >
@@ -349,7 +351,7 @@ export default function MasukPage() {
                 d="M24 48c6.2 0 11.4-2 15.4-5.6l-7.5-5.8c-2.1 1.4-4.8 2.3-7.9 2.3-6.3 0-11.7-3.7-13.6-9l-7.8 6.1C6.5 42.6 14.6 48 24 48z"
               />
             </svg>
-            Lanjut dengan Google
+            {t.auth.googleBtn}
           </button>
 
           {/* Demo */}
@@ -357,13 +359,13 @@ export default function MasukPage() {
             type="button"
             onClick={handleDemo}
             disabled={isBusy}
-            title="Jelajahi briefing dan fitur Hanga langsung sebagai Bu Sari tanpa perlu mendaftar"
+            title={t.auth.demoSub}
             className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] w-full text-body font-semibold text-brand-800 bg-brand-100/70 border border-brand-600 pressable disabled:opacity-50 transition-colors hover:bg-brand-100"
             style={{ borderRadius: "var(--radius-card)" }}
           >
-            🧪 Coba Mode Demo
+            {t.auth.demoBtn}
             <span className="text-caption text-ink-600 font-normal">
-              Jelajahi sebagai Bu Sari, tanpa akun
+              {t.auth.demoSub}
             </span>
           </button>
         </div>
@@ -373,7 +375,7 @@ export default function MasukPage() {
           className="rise-in text-caption text-ink-600 text-center mt-6"
           style={{ animationDelay: "270ms" }}
         >
-          Warung Anda, data Anda. Kami hanya membacanya untuk membantu Anda.
+          {t.auth.footnote}
         </p>
       </div>
 
@@ -397,7 +399,7 @@ export default function MasukPage() {
               HANGA
             </p>
             <p className="text-body text-brand-100 mt-2">
-              Warung buka — selamat bekerja, Bu. 🌅
+              {t.auth.shutterText}
             </p>
           </div>
         </div>

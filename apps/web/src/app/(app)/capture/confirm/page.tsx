@@ -11,7 +11,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { DEMO_SHOP_ID } from "@/lib/constants";
+import { useLanguage } from "@/lib/i18n/context";
 import type { ExtractedLine } from "@/types";
 
 // Fallback extracted lines for demonstration
@@ -24,6 +26,7 @@ const PLACEHOLDER_LINES: ExtractedLine[] = [
 
 export default function ConfirmSheetPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [lines, setLines] = useState<ExtractedLine[]>(PLACEHOLDER_LINES);
   const [extractionId, setExtractionId] = useState<string>("demo");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,11 +85,14 @@ export default function ConfirmSheetPage() {
     <AppShell>
       <div className="flex flex-col gap-4 py-4">
         {/* Header */}
-        <div className="px-4">
-          <h1 className="text-title text-ink-900">Konfirmasi Catatan</h1>
-          <p className="text-body text-ink-600 mt-1">
-            Periksa dan perbaiki hasil baca AI. Baris kuning perlu dicek ulang.
-          </p>
+        <div className="px-4 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-title text-ink-900">{t.capture.confirmTitle}</h1>
+            <p className="text-body text-ink-600 mt-1">
+              {t.capture.confirmSubtitle}
+            </p>
+          </div>
+          <LanguageSwitcher variant="compact" />
         </div>
 
         {/* Editable table */}
@@ -100,9 +106,9 @@ export default function ConfirmSheetPage() {
           >
             {/* Table header */}
             <div className="grid grid-cols-[1fr_80px_80px] gap-2 px-4 py-3 border-b border-border">
-              <span className="text-caption text-ink-600 font-semibold">Nama</span>
-              <span className="text-caption text-ink-600 font-semibold text-right">Jumlah</span>
-              <span className="text-caption text-ink-600 font-semibold text-right">Satuan</span>
+              <span className="text-caption text-ink-600 font-semibold">{t.capture.colName}</span>
+              <span className="text-caption text-ink-600 font-semibold text-right">{t.capture.colQty}</span>
+              <span className="text-caption text-ink-600 font-semibold text-right">{t.capture.colUnit}</span>
             </div>
 
             {/* Rows */}
@@ -149,7 +155,7 @@ export default function ConfirmSheetPage() {
 
           {/* Low confidence hint */}
           <p className="text-caption text-warn-600 mt-2">
-            ⚠️ Baris kuning: kepercayaan AI rendah, mohon dicek ulang.
+            {t.capture.yellowWarning}
           </p>
         </div>
 
@@ -165,7 +171,7 @@ export default function ConfirmSheetPage() {
               transitionDuration: "var(--duration-fast)",
             }}
           >
-            {isSubmitting ? "Menyimpan..." : "✅ Konfirmasi"}
+            {isSubmitting ? t.capture.savingBtn : t.capture.confirmBtn}
           </button>
         </div>
       </div>

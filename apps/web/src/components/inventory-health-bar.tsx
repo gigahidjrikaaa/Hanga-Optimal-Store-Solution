@@ -11,6 +11,7 @@
 
 import Link from "next/link";
 import { formatIDR } from "@/lib/design-system";
+import { useLanguage } from "@/lib/i18n/context";
 import type { InventoryOverview } from "@/types";
 
 interface InventoryHealthBarProps {
@@ -19,6 +20,8 @@ interface InventoryHealthBarProps {
 }
 
 export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarProps) {
+  const { t, language } = useLanguage();
+
   if (isLoading) {
     return (
       <div className="px-4">
@@ -43,10 +46,12 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
             </span>
             <div>
               <h2 className="text-base font-bold text-ink-900 leading-tight">
-                Stok & Dagangan Warung
+                {t.inventorySummary.title}
               </h2>
               <p className="text-sm text-ink-600 mt-0.5">
-                {overview.total_skus} macam barang · Uang di rak:{" "}
+                {language === "id"
+                  ? `${overview.total_skus} macam barang · Uang di rak: `
+                  : `${overview.total_skus} total SKUs · Shelf capital: `}
                 <span className="font-semibold text-ink-900">
                   {formatIDR(overview.total_inventory_value_idr)}
                 </span>
@@ -56,9 +61,9 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
           <Link
             href="/stok?tab=semua"
             className="text-sm font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-2 rounded-xl transition-colors border border-brand-200 whitespace-nowrap min-h-[44px] flex items-center justify-center touch-target"
-            title="Buka daftar seluruh stok barang warung"
+            title={language === "id" ? "Buka daftar seluruh stok barang warung" : "View all store inventory"}
           >
-            Semua Stok →
+            {t.inventorySummary.seeAll}
           </Link>
         </div>
 
@@ -71,10 +76,14 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
               </span>
               <div>
                 <p className="text-sm font-bold text-red-900">
-                  Ada {overview.low_stock_count} barang yang mau habis!
+                  {language === "id"
+                    ? `Ada ${overview.low_stock_count} barang yang mau habis!`
+                    : `${overview.low_stock_count} items running out soon!`}
                 </p>
                 <p className="text-sm text-red-700 mt-0.5">
-                  {urgentNames} sisa di bawah 2 hari penjualan.
+                  {language === "id"
+                    ? `${urgentNames} sisa di bawah 2 hari penjualan.`
+                    : `${urgentNames} have less than 2 days of sales coverage.`}
                 </p>
               </div>
             </div>
@@ -83,7 +92,11 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
               href="/stok?tab=perlu-belanja"
               className="min-h-[44px] px-4 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-sm rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition-all text-center touch-target"
             >
-              <span>Lihat & Pesan ({overview.low_stock_count})</span>
+              <span>
+                {language === "id"
+                  ? `Lihat & Pesan (${overview.low_stock_count})`
+                  : `Review & Order (${overview.low_stock_count})`}
+              </span>
               <span>→</span>
             </Link>
           </div>
@@ -91,7 +104,9 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
             <span className="text-xl">✅</span>
             <p className="text-sm font-semibold text-emerald-900">
-              Semua barang di rak masih aman untuk 5+ hari ke depan.
+              {language === "id"
+                ? "Semua barang di rak masih aman untuk 5+ hari ke depan."
+                : "All items on shelf are well stocked for the next 5+ days."}
             </p>
           </div>
         )}
@@ -100,34 +115,46 @@ export function InventoryHealthBar({ overview, isLoading }: InventoryHealthBarPr
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-sm">
           <Link
             href="/stok?tab=perlu-belanja"
-            className={`min-h-[40px] px-3.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-colors font-medium ${
+            className={`min-h-[40px] px-3.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-colors font-medium shrink-0 ${
               overview.low_stock_count > 0
                 ? "bg-red-100/70 border-red-300 text-red-800 hover:bg-red-200/70"
                 : "bg-surface border-border text-ink-600"
             }`}
           >
             <span>🚨</span>
-            <span>{overview.low_stock_count} Mau Habis</span>
+            <span>
+              {language === "id"
+                ? `${overview.low_stock_count} Mau Habis`
+                : `${overview.low_stock_count} Stockout Risk`}
+            </span>
           </Link>
 
           <Link
             href="/stok?tab=semua&status=EXPIRED_RISK"
-            className={`min-h-[40px] px-3.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-colors font-medium ${
+            className={`min-h-[40px] px-3.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-colors font-medium shrink-0 ${
               overview.waste_risk_count > 0
                 ? "bg-amber-100/70 border-amber-300 text-amber-800 hover:bg-amber-200/70"
                 : "bg-surface border-border text-ink-600"
             }`}
           >
             <span>⚠️</span>
-            <span>{overview.waste_risk_count} Risiko Basi</span>
+            <span>
+              {language === "id"
+                ? `${overview.waste_risk_count} Risiko Basi`
+                : `${overview.waste_risk_count} Perish Risk`}
+            </span>
           </Link>
 
           <Link
             href="/stok?tab=semua&status=SAFE"
-            className="min-h-[40px] px-3.5 py-1.5 rounded-xl border bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100 flex items-center gap-1.5 transition-colors font-medium"
+            className="min-h-[40px] px-3.5 py-1.5 rounded-xl border bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100 flex items-center gap-1.5 transition-colors font-medium shrink-0"
           >
             <span>✅</span>
-            <span>{overview.safe_stock_count} Masih Aman</span>
+            <span>
+              {language === "id"
+                ? `${overview.safe_stock_count} Masih Aman`
+                : `${overview.safe_stock_count} Safe`}
+            </span>
           </Link>
         </div>
       </div>

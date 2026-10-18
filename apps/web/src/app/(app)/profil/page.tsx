@@ -10,11 +10,14 @@
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { HangaLogo } from "@/components/hanga-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { useAuth } from "@/lib/auth-context";
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function ProfilPage() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
 
   const handleSignOut = async () => {
     await signOut();
@@ -27,9 +30,12 @@ export default function ProfilPage() {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/60 pb-3">
           <HangaLogo variant="compact" size="sm" />
-          <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800">
-            v1.1 Demo
-          </span>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher variant="compact" />
+            <span className="text-caption font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-800">
+              {t.profil.demoBadge}
+            </span>
+          </div>
         </div>
 
         {/* Profile Card */}
@@ -50,10 +56,29 @@ export default function ProfilPage() {
             <p className="text-body text-ink-600">Warung Berkah Jaya</p>
             <p className="text-caption text-neutral-400 mt-0.5">
               {user?.isDemo
-                ? "Sesi Mode Demo — data contoh"
-                : (user?.email ?? "Pemilik warung")}
+                ? t.profil.demoSessionNote
+                : (user?.email ?? t.profil.realOwnerNote)}
             </p>
           </div>
+        </div>
+
+        {/* Language Selection Card */}
+        <div
+          className="bg-surface p-4 flex flex-col gap-3 border border-border"
+          style={{
+            borderRadius: "var(--radius-card)",
+            boxShadow: "var(--shadow-card)",
+          }}
+        >
+          <div>
+            <h3 className="text-heading text-ink-900 font-semibold flex items-center gap-2">
+              <span>🌐</span> {t.profil.langSectionTitle}
+            </h3>
+            <p className="text-caption text-ink-600 mt-1">
+              {t.profil.langSectionDesc}
+            </p>
+          </div>
+          <LanguageSwitcher variant="full" />
         </div>
 
         {/* Supplier / Wholesaler Section */}
@@ -66,9 +91,11 @@ export default function ProfilPage() {
         >
           <div className="flex items-center justify-between">
             <h3 className="text-heading text-ink-900 font-semibold flex items-center gap-2">
-              <span>🏪</span> Pemasok Utama (Grosir)
+              <span>🏪</span> {t.profil.supplierSectionTitle}
             </h3>
-            <span className="text-caption text-brand-600 font-bold">Aktif</span>
+            <span className="text-caption text-brand-600 font-bold">
+              {t.profil.activeBadge}
+            </span>
           </div>
 
           <div className="p-3 bg-canvas rounded-lg border border-border/70 flex items-center justify-between">
@@ -82,10 +109,10 @@ export default function ProfilPage() {
               href="https://wa.me/6281234567890"
               target="_blank"
               rel="noopener noreferrer"
-              title="Kirim pesan langsung ke WhatsApp Toko Grosir Jaya"
+              title="WhatsApp Toko Grosir Jaya"
               className="touch-target px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-caption font-bold flex items-center gap-1.5 transition-colors shadow-sm"
             >
-              <span>💬</span> Hubungi
+              <span>💬</span> {t.profil.contactBtn}
             </a>
           </div>
 
@@ -100,10 +127,10 @@ export default function ProfilPage() {
               href="https://wa.me/6281298765432"
               target="_blank"
               rel="noopener noreferrer"
-              title="Kirim pesan langsung ke WhatsApp Agen Telur Berkah"
+              title="WhatsApp Agen Telur Berkah"
               className="touch-target px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-caption font-bold flex items-center gap-1.5 transition-colors shadow-sm"
             >
-              <span>💬</span> Hubungi
+              <span>💬</span> {t.profil.contactBtn}
             </a>
           </div>
         </div>
@@ -118,12 +145,11 @@ export default function ProfilPage() {
           <div className="flex items-center gap-2">
             <span className="text-lg">🏆</span>
             <span className="text-heading text-brand-800 font-bold">
-              Google Cloud AI Builder Cup 2026
+              {t.profil.competitionBadge}
             </span>
           </div>
           <p className="text-caption text-ink-600">
-            Powered by <strong>Gemma 3</strong> (Reasoning & Bahasa Explanation) &amp;{" "}
-            <strong>Gemini Flash</strong> (Vision Notebook Extraction) di atas Google Cloud Run &amp; Firestore.
+            {t.profil.competitionDesc}
           </p>
         </div>
 
@@ -134,7 +160,7 @@ export default function ProfilPage() {
             title="Atur ulang profil toko, barang terlaris, dan modal kas awal"
             className="touch-target w-full py-3 px-4 rounded-xl border border-border bg-surface hover:bg-canvas text-ink-900 font-semibold text-body flex items-center justify-center gap-2 transition-colors shadow-sm"
           >
-            <span>🔄</span> Ulangi Interview Awal (Cold Start)
+            <span>🔄</span> {t.profil.coldStartBtn}
           </a>
 
           {/* Sign out */}
@@ -144,7 +170,7 @@ export default function ProfilPage() {
             title="Keluar dari sesi warung ini"
             className="touch-target w-full py-3 px-4 rounded-xl border border-danger-600/30 bg-surface hover:bg-danger-100 text-danger-600 font-semibold text-body flex items-center justify-center gap-2 transition-colors"
           >
-            <span>🚪</span> Keluar
+            <span>🚪</span> {t.profil.signOutBtn}
           </button>
         </div>
       </div>

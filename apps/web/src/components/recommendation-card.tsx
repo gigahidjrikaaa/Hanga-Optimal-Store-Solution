@@ -20,6 +20,7 @@ import {
   formatDelta,
   formatIDR,
 } from "@/lib/design-system";
+import { useLanguage } from "@/lib/i18n/context";
 import type { Recommendation } from "@/types";
 
 interface RecommendationCardProps {
@@ -30,6 +31,7 @@ interface RecommendationCardProps {
 }
 
 export function RecommendationCard({ recommendation, scenario, onAsk }: RecommendationCardProps) {
+  const { t, language } = useLanguage();
   const {
     action,
     sku,
@@ -46,12 +48,9 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
   const confidenceConfig = CONFIDENCE_CONFIG[confidence];
   const displayName = name ?? sku;
 
-  const ACTION_HINTS: Record<string, string> = {
-    REORDER: "Stok menipis atau perputaran cepat — disarankan pesan ke grosir hari ini",
-    PROMO: "Beri potongan diskon atau paket hemat sebelum kualitas menurun / kadaluarsa",
-    HOLD: "Stok di rak masih cukup banyak — tahan belanja untuk menghemat modal kas",
-    SKIP: "Penjualan melambat — lewati pemesanan untuk menghindari penumpukan modal",
-  };
+  const actionLabel = t.cards.actionLabels[action] ?? actionBadge.label;
+  const actionHint = t.cards.actionHints[action] ?? actionBadge.label;
+  const confidenceLabel = t.cards.confidenceLabels[confidence] ?? confidenceConfig.label;
 
   // Only show factors with |weight| >= 0.05, max 4, sorted by |weight| (spec §4)
   const visibleFactors = factors
@@ -94,14 +93,14 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
       {/* Action badge with accessibility title hint */}
       <div className="flex items-center justify-between">
         <span
-          title={ACTION_HINTS[action] ?? actionBadge.label}
+          title={actionHint}
           className={`text-caption px-3 py-1 w-fit font-semibold cursor-help ${actionBadge.className}`}
           style={{ borderRadius: "var(--radius-badge)" }}
         >
-          {actionBadge.label}
+          {actionLabel}
         </span>
         <span className="text-xs text-ink-600 hidden sm:inline-block">
-          {ACTION_HINTS[action]}
+          {actionHint}
         </span>
       </div>
 
@@ -113,14 +112,17 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
         <p className="text-numeric text-body text-ink-900">
           {qty.min}–{qty.max} {qty.unit}{" "}
           <span className="text-ink-600 font-normal">
-            · kemungkinan {qty.likely} {qty.unit}
+            · {language === "id" ? "kemungkinan" : "likely"} {qty.likely} {qty.unit}
           </span>
         </p>
 
         {qty.pack_display && (
           <div className="flex items-center gap-1.5 text-caption font-medium px-2 py-0.5 w-fit rounded bg-canvas text-ink-900 border border-border">
             <span>📦</span>
-            <span>Standar grosir: <strong className="font-semibold">{qty.pack_display}</strong></span>
+            <span>
+              {language === "id" ? "Standar grosir: " : "Wholesale pack: "}
+              <strong className="font-semibold">{qty.pack_display}</strong>
+            </span>
           </div>
         )}
       </div>
@@ -128,18 +130,19 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
       {/* Estimated cost (v1.1) */}
       {est_cost_idr != null && est_cost_idr > 0 && (
         <p className="text-numeric text-caption text-ink-600">
-          Estimasi modal: <span className="font-semibold text-ink-900">±{formatIDR(est_cost_idr)}</span>
+          {language === "id" ? "Estimasi modal: " : "Estimated capital: "}
+          <span className="font-semibold text-ink-900">±{formatIDR(est_cost_idr)}</span>
         </p>
       )}
 
       {/* Confidence badge with explanatory title */}
       <div className="flex items-center gap-2">
         <span
-          title={`Tingkat keyakinan data: ${confidenceConfig.label}`}
+          title={`${language === "id" ? "Tingkat keyakinan data: " : "Confidence level: "}${confidenceLabel}`}
           className={`text-caption px-3 py-1 w-fit font-medium ${confidenceConfig.className}`}
           style={{ borderRadius: "var(--radius-badge)" }}
         >
-          {confidenceConfig.label}
+          {confidenceLabel}
         </span>
       </div>
 
@@ -148,6 +151,7 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
         <div className="flex flex-wrap gap-2">
           {visibleFactors.map((factor) => {
             const config = FACTOR_CONFIG[factor.key];
+            const factorLabel = t.cards.factorLabels[factor.key] ?? config?.label ?? factor.key;
             const isPositive = factor.direction === "+";
             return (
               <span
@@ -164,8 +168,8 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
                     : "var(--color-warn-600)",
                 }}
               >
-                <span aria-hidden="true">{config.icon}</span>
-                {config.label}{" "}
+                <span aria-hidden="true">{config?.icon ?? "📌"}</span>
+                {factorLabel}{" "}
                 {/* CASH_TIGHT deferral is binary — no percentage (spec §3) */}
                 {factor.key !== "CASH_TIGHT" && formatDelta(factor.weight)}
               </span>
@@ -175,7 +179,7 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
       )}
 
       {/* Rationale */}
-      <p className="text-body text-ink-600">{rationale_bahasa}</p>
+      <p className="text-body text-ink-600 leading-relaxed">{rationale_bahasa}</p>
 
       {/* Operational Hint Callout */}
       {hint_bahasa && (
@@ -189,19 +193,25 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
       {onAsk && (
         <button
           type="button"
-          title="Tanya alasan AI merekomendasikan saran ini"
+          title={language === "id" ? "Tanya alasan AI merekomendasikan saran ini" : "Ask AI why this was recommended"}
           onClick={() =>
             onAsk(
               action === "REORDER"
-                ? `Kenapa pesan ${qty.likely} ${qty.unit} ${displayName}?`
-                : `Kenapa ${displayName} ${ACTION_BADGES[action].label.toLowerCase()}?`
+                ? (language === "id"
+                    ? `Kenapa pesan ${qty.likely} ${qty.unit} ${displayName}?`
+                    : `Why reorder ${qty.likely} ${qty.unit} of ${displayName}?`)
+                : (language === "id"
+                    ? `Kenapa ${displayName} ${actionLabel.toLowerCase()}?`
+                    : `Why is ${displayName} marked as ${actionLabel.toLowerCase()}?`)
             )
           }
           className="touch-target w-fit text-caption font-semibold px-3 py-1.5 bg-canvas border border-border text-ink-600 hover:text-ink-900 hover:bg-neutral-50 flex items-center gap-1.5 transition-colors"
           style={{ borderRadius: "var(--radius-badge)" }}
         >
-          <span>🎤 Tanya Hanga</span>
-          <span className="text-xs text-neutral-400 font-normal">· Tanya alasan AI</span>
+          <span>🎤 {language === "id" ? "Tanya Hanga" : "Ask Hanga"}</span>
+          <span className="text-xs text-neutral-400 font-normal">
+            · {language === "id" ? "Tanya alasan AI" : "Ask AI reasoning"}
+          </span>
         </button>
       )}
 
@@ -209,14 +219,15 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
       {order_draft && (
         <div className="flex flex-col gap-2 pt-2 border-t border-border">
           <p className="text-caption text-ink-600">
-            Pemasok: <strong>{order_draft.supplier_ref}</strong> · ±{formatIDR(order_draft.est_cost_idr)}
+            {language === "id" ? "Pemasok: " : "Supplier: "}
+            <strong>{order_draft.supplier_ref}</strong> · ±{formatIDR(order_draft.est_cost_idr)}
           </p>
           <a
             href={order_draft.wa_deep_link}
             target="_blank"
             rel="noopener noreferrer"
             onClick={draftOrder}
-            title="Kirim draf pesanan otomatis ke WhatsApp grosir"
+            title={language === "id" ? "Kirim draf pesanan otomatis ke WhatsApp grosir" : "Send automated reorder to wholesaler WhatsApp"}
             className="touch-target text-body font-semibold text-center py-3 px-4 text-surface pressable flex flex-col items-center justify-center gap-0.5"
             style={{
               borderRadius: "var(--radius-card)",
@@ -224,9 +235,11 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
               transitionDuration: "var(--duration-fast)",
             }}
           >
-            <span>💬 Pesan via WhatsApp</span>
+            <span>💬 {t.cards.orderWa}</span>
             <span className="text-xs font-normal opacity-90">
-              Format pesan tersusun otomatis rapi tanpa ketik manual
+              {language === "id"
+                ? "Format pesan tersusun otomatis rapi tanpa ketik manual"
+                : "Pre-filled reorder message formatted automatically"}
             </span>
           </a>
         </div>

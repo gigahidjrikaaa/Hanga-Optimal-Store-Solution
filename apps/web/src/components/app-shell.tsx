@@ -10,9 +10,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_TABS } from "@/lib/design-system";
+import { useLanguage } from "@/lib/i18n/context";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <div className="flex flex-1 flex-col mx-auto w-full max-w-[480px]">
@@ -27,11 +29,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <ul className="flex justify-around py-2">
           {NAV_TABS.map((tab) => {
             const isActive = pathname === tab.href;
+            const translatedLabel =
+              tab.key === "beranda"
+                ? t.nav.beranda
+                : tab.key === "stok"
+                ? t.nav.stok
+                : tab.key === "pesanan"
+                ? t.nav.pesanan
+                : tab.key === "profil"
+                ? t.nav.profil
+                : tab.label;
+
             return (
               <li key={tab.key}>
                 <Link
                   href={tab.href}
-                  title={`Menu ${tab.label}`}
+                  title={`Menu ${translatedLabel}`}
                   className={`touch-target flex flex-col items-center gap-1 px-3 transition-colors`}
                   style={{
                     color: isActive
@@ -43,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <span className="text-xl" role="img" aria-hidden="true">
                     {tab.icon}
                   </span>
-                  <span className="text-caption">{tab.label}</span>
+                  <span className="text-caption font-semibold">{translatedLabel}</span>
                 </Link>
               </li>
             );

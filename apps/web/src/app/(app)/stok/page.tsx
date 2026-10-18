@@ -18,25 +18,28 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { HangaLogo } from "@/components/hanga-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { api } from "@/lib/api";
 import { DEMO_SHOP_ID } from "@/lib/constants";
 import { DEMO_INVENTORY } from "@/lib/demo-data";
 import { formatIDR, INVENTORY_STATUS_CONFIG } from "@/lib/design-system";
+import { useLanguage } from "@/lib/i18n/context";
 import type { InventoryItem, InventoryOverview, InventoryStatus } from "@/types";
 
 const CATEGORIES = [
-  { key: "ALL", label: "Semua", icon: "🧺" },
-  { key: "BAHAN_POKOK", label: "Bahan Pokok", icon: "🌾" },
-  { key: "MINUMAN", label: "Kopi & Minuman", icon: "☕" },
-  { key: "SNACK", label: "Camilan & Roti", icon: "🍪" },
-  { key: "LAINNYA", label: "Rokok & Lainnya", icon: "📦" },
-  { key: "PERAWATAN", label: "Sabun & Rumah", icon: "🧼" },
+  { key: "ALL", icon: "🧺" },
+  { key: "BAHAN_POKOK", icon: "🌾" },
+  { key: "MINUMAN", icon: "☕" },
+  { key: "SNACK", icon: "🍪" },
+  { key: "LAINNYA", icon: "📦" },
+  { key: "PERAWATAN", icon: "🧼" },
 ];
 
 type MainTab = "PERLU_BELANJA" | "SEMUA_BARANG";
 type SortOption = "URGENCY" | "DAYS_ASC" | "VALUE_DESC" | "NAME_ASC";
 
 function StokDashboard() {
+  const { t, language } = useLanguage();
   const searchParams = useSearchParams();
   const urlTab = searchParams.get("tab");
   const urlStatus = searchParams.get("status") as InventoryStatus | null;
@@ -173,34 +176,37 @@ function StokDashboard() {
     <AppShell>
       <div className="flex flex-col gap-4 py-4 max-w-lg mx-auto w-full">
         {/* Top Header Bar */}
-        <div className="px-4 flex items-center justify-between border-b border-border pb-3">
+        <div className="px-4 flex items-center justify-between border-b border-border pb-3 gap-2">
           <div className="flex items-center gap-2.5">
             <HangaLogo variant="icon" size="sm" />
             <div>
               <span className="text-base font-bold text-ink-900 block leading-tight">
-                Stok & Dagangan
+                {t.stok.headerTitle}
               </span>
               <span className="text-xs text-ink-600 block">
-                Warung Bu Sari · Terpantau Otomatis
+                {t.stok.headerSubtitle}
               </span>
             </div>
           </div>
-          <Link
-            href="/"
-            className="text-sm font-bold text-brand-800 bg-brand-50 hover:bg-brand-100 px-3.5 py-2 rounded-xl border border-brand-200 transition-colors flex items-center gap-1 min-h-[44px] touch-target"
-            title="Kembali ke Briefing Harian"
-          >
-            <span>← Briefing</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher variant="compact" />
+            <Link
+              href="/"
+              className="text-sm font-bold text-brand-800 bg-brand-50 hover:bg-brand-100 px-3.5 py-2 rounded-xl border border-brand-200 transition-colors flex items-center gap-1 min-h-[44px] touch-target"
+              title={t.stok.backBriefing}
+            >
+              <span>{t.stok.backBriefing}</span>
+            </Link>
+          </div>
         </div>
 
         {/* Primary Page Title */}
         <div className="px-4">
           <h1 className="text-2xl font-extrabold text-ink-900 tracking-tight">
-            Stok & Dagangan Warung
+            {t.stok.pageTitle}
           </h1>
           <p className="text-sm text-ink-600 mt-1">
-            Pantau barang yang mau habis dan pesan langsung ke toko grosir lewat WhatsApp.
+            {t.stok.pageSubtitle}
           </p>
         </div>
 
@@ -216,8 +222,7 @@ function StokDashboard() {
                   : "text-ink-600 hover:text-ink-900"
               }`}
             >
-              <span className="text-base">🚨</span>
-              <span>Perlu Belanja ({urgentItems.length})</span>
+              <span>{t.stok.tabPerluBelanja} ({urgentItems.length})</span>
             </button>
 
             <button
@@ -229,8 +234,7 @@ function StokDashboard() {
                   : "text-ink-600 hover:text-ink-900"
               }`}
             >
-              <span className="text-base">📦</span>
-              <span>Semua Stok ({overview.total_skus})</span>
+              <span>{t.stok.tabSemuaStok} ({overview.total_skus})</span>
             </button>
           </div>
         </div>
@@ -244,10 +248,10 @@ function StokDashboard() {
               <span className="text-2xl">🚨</span>
               <div>
                 <h2 className="text-base font-bold text-red-950">
-                  Daftar Belanja Prioritas Pagi Ini
+                  {t.stok.priorityBannerTitle}
                 </h2>
                 <p className="text-sm text-red-800 mt-0.5">
-                  Ada <strong>{urgentItems.length} barang</strong> yang stoknya hampir habis. Pesan pagi ini agar langganan tidak kecewa.
+                  {t.stok.priorityBannerDesc.replace("{count}", String(urgentItems.length))}
                 </p>
               </div>
             </div>
@@ -261,7 +265,7 @@ function StokDashboard() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <span className="text-xs font-bold text-red-700 bg-red-100 px-2.5 py-1 rounded-md uppercase tracking-wide">
-                      Mau Habis!
+                      {language === "id" ? "Mau Habis!" : "Stockout Risk!"}
                     </span>
                     <h3 className="text-lg font-extrabold text-ink-900 mt-1.5 leading-snug">
                       {item.name}
@@ -277,7 +281,7 @@ function StokDashboard() {
                 <div className="grid grid-cols-2 gap-2 bg-red-50/50 border border-red-100 rounded-xl p-3">
                   <div>
                     <span className="text-xs text-neutral-500 font-medium block">
-                      Sisa di Rak Saat Ini
+                      {t.stok.inShelf}
                     </span>
                     <span className="text-lg font-black text-ink-900 block mt-0.5">
                       {item.stock_qty} {item.unit}
@@ -286,10 +290,10 @@ function StokDashboard() {
 
                   <div>
                     <span className="text-xs text-neutral-500 font-medium block">
-                      Perkiraan Bertahan
+                      {t.stok.coverage}
                     </span>
                     <span className="text-lg font-black text-red-700 block mt-0.5">
-                      {item.days_of_coverage} hari lagi
+                      {item.days_of_coverage} {language === "id" ? "hari lagi" : "days left"}
                     </span>
                   </div>
                 </div>
@@ -297,10 +301,10 @@ function StokDashboard() {
                 {/* Supplier & Price Info */}
                 <div className="text-sm text-ink-700 flex items-center justify-between border-t border-border pt-2.5">
                   <span>
-                    Pemasok: <strong>{item.supplier_ref ?? "Toko Grosir"}</strong>
+                    {t.stok.supplier}: <strong>{item.supplier_ref ?? (language === "id" ? "Toko Grosir" : "Wholesaler")}</strong>
                   </span>
                   <span className="font-semibold text-ink-900">
-                    Modal: {formatIDR(item.unit_cost_idr)}/{item.unit}
+                    {language === "id" ? "Modal: " : "Cost: "} {formatIDR(item.unit_cost_idr)}/{item.unit}
                   </span>
                 </div>
 
@@ -313,8 +317,8 @@ function StokDashboard() {
                   <span className="text-xl">💬</span>
                   <span>
                     {orderedSku === item.sku
-                      ? "✓ Pesanan Tercatat di Hanga!"
-                      : `Pesan ${item.name.split(" ")[0]} via WhatsApp`}
+                      ? t.stok.orderLogged
+                      : t.stok.quickOrderWa.replace("{name}", item.name.split(" ")[0])}
                   </span>
                 </button>
               </div>
@@ -327,7 +331,7 @@ function StokDashboard() {
                 onClick={() => setActiveTab("SEMUA_BARANG")}
                 className="text-sm font-bold text-brand-700 hover:text-brand-900 underline py-2 min-h-[44px] touch-target"
               >
-                Lihat Semua ({overview.total_skus}) Barang Dagangan Lainnya →
+                {t.stok.viewAllLink.replace("{count}", String(overview.total_skus))}
               </button>
             </div>
           </div>
@@ -347,7 +351,7 @@ function StokDashboard() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari barang (Telur, Gula, Kopi, Indomie)..."
+                placeholder={t.stok.searchPlaceholder}
                 className="w-full pl-11 pr-10 py-3 min-h-[48px] bg-surface border border-neutral-300 rounded-xl text-base text-ink-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm"
               />
               {searchQuery && (
@@ -363,65 +367,71 @@ function StokDashboard() {
 
             {/* Category Pills (Horizontal Scroll) */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full scroll-smooth">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.key}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat.key)}
-                  className={`min-h-[44px] shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
-                    selectedCategory === cat.key
-                      ? "bg-brand-600 text-white shadow-sm"
-                      : "bg-surface border border-neutral-300 text-ink-800 hover:bg-neutral-100"
-                  }`}
-                >
-                  <span className="text-base">{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </button>
-              ))}
+              {CATEGORIES.map((cat) => {
+                const categoryLabel = t.stok.categories[cat.key] ?? cat.key;
+                return (
+                  <button
+                    key={cat.key}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat.key)}
+                    className={`min-h-[44px] shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${
+                      selectedCategory === cat.key
+                        ? "bg-brand-600 text-white shadow-sm"
+                        : "bg-surface border border-neutral-300 text-ink-800 hover:bg-neutral-100"
+                    }`}
+                  >
+                    <span className="text-base">{cat.icon}</span>
+                    <span>{categoryLabel}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Status Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full scroll-smooth text-sm">
-              <span className="text-neutral-500 font-semibold mr-0.5 shrink-0">Status:</span>
+              <span className="text-neutral-500 font-semibold mr-0.5 shrink-0">{t.common.status}:</span>
               {[
-                { key: "ALL", label: "Semua" },
-                { key: "CRITICAL", label: "🚨 Mau Habis" },
-                { key: "EXPIRED_RISK", label: "⚠️ Risiko Basi" },
-                { key: "LOW", label: "📉 Menipis" },
-                { key: "SAFE", label: "✅ Aman" },
-                { key: "OVERSTOCK", label: "📦 Menumpuk" },
-              ].map((st) => (
-                <button
-                  key={st.key}
-                  type="button"
-                  onClick={() => setSelectedStatus(st.key)}
-                  className={`min-h-[42px] shrink-0 whitespace-nowrap px-3.5 py-2 rounded-xl text-sm font-bold transition-colors ${
-                    selectedStatus === st.key
-                      ? "bg-brand-100 text-brand-900 border-2 border-brand-600 shadow-xs"
-                      : "bg-surface border border-neutral-300 text-ink-700 hover:bg-neutral-100 font-medium"
-                  }`}
-                >
-                  {st.label}
-                </button>
-              ))}
+                { key: "ALL", icon: "" },
+                { key: "CRITICAL", icon: "🚨 " },
+                { key: "EXPIRED_RISK", icon: "⚠️ " },
+                { key: "LOW", icon: "📉 " },
+                { key: "SAFE", icon: "✅ " },
+                { key: "OVERSTOCK", icon: "📦 " },
+              ].map((st) => {
+                const statusLabel = `${st.icon}${t.stok.statuses[st.key] ?? st.key}`;
+                return (
+                  <button
+                    key={st.key}
+                    type="button"
+                    onClick={() => setSelectedStatus(st.key)}
+                    className={`min-h-[42px] shrink-0 whitespace-nowrap px-3.5 py-2 rounded-xl text-sm font-bold transition-colors ${
+                      selectedStatus === st.key
+                        ? "bg-brand-100 text-brand-900 border-2 border-brand-600 shadow-xs"
+                        : "bg-surface border border-neutral-300 text-ink-700 hover:bg-neutral-100 font-medium"
+                    }`}
+                  >
+                    {statusLabel}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Sort Dropdown */}
             <div className="flex items-center justify-between text-sm py-1">
               <span className="text-neutral-600 font-medium">
-                Menampilkan <strong>{allFilteredItems.length}</strong> barang
+                {t.stok.displayCount.replace("{count}", String(allFilteredItems.length))}
               </span>
               <div className="flex items-center gap-1.5">
-                <span className="text-neutral-500">Urut:</span>
+                <span className="text-neutral-500">{t.stok.sortLabel}</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
                   className="bg-surface border border-neutral-300 text-ink-900 text-sm font-medium rounded-lg px-2.5 py-1.5 min-h-[40px] focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
-                  <option value="URGENCY">Perlu Belanja Dulu</option>
-                  <option value="DAYS_ASC">Paling Cepat Habis</option>
-                  <option value="VALUE_DESC">Modal Terbesar</option>
-                  <option value="NAME_ASC">Nama (A-Z)</option>
+                  <option value="URGENCY">{t.stok.sortUrgency}</option>
+                  <option value="DAYS_ASC">{t.stok.sortDays}</option>
+                  <option value="VALUE_DESC">{t.stok.sortCost}</option>
+                  <option value="NAME_ASC">{t.stok.sortName}</option>
                 </select>
               </div>
             </div>
@@ -430,9 +440,9 @@ function StokDashboard() {
             {allFilteredItems.length === 0 ? (
               <div className="bg-surface border border-neutral-300 rounded-2xl p-8 text-center flex flex-col items-center">
                 <span className="text-4xl mb-2">🔍</span>
-                <h3 className="text-base font-bold text-ink-900">Barang tidak ditemukan</h3>
+                <h3 className="text-base font-bold text-ink-900">{t.stok.emptyTitle}</h3>
                 <p className="text-sm text-ink-600 mt-1">
-                  Coba kata kunci lain atau bersihkan pilihan filter.
+                  {t.stok.emptyDesc}
                 </p>
                 <button
                   type="button"
@@ -443,7 +453,7 @@ function StokDashboard() {
                   }}
                   className="mt-4 min-h-[44px] px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold shadow hover:bg-brand-700"
                 >
-                  Tampilkan Semua Barang
+                  {t.stok.showAllBtn}
                 </button>
               </div>
             ) : (
@@ -468,11 +478,11 @@ function StokDashboard() {
                       <div>
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-semibold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded">
-                            {item.category.replace("_", " ")}
+                            {t.stok.categories[item.category] ?? item.category.replace("_", " ")}
                           </span>
                           {item.perishable && (
                             <span className="text-xs font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
-                              Mudah Basi
+                              {t.stok.perishable}
                             </span>
                           )}
                         </div>
@@ -480,7 +490,9 @@ function StokDashboard() {
                           {item.name}
                         </h3>
                         <p className="text-xs text-neutral-500 mt-0.5">
-                          {item.pack_display ? `Kemasan grosir: ${item.pack_display}` : `Satuan: ${item.unit}`}
+                          {item.pack_display
+                            ? `${t.stok.wholesalePack}: ${item.pack_display}`
+                            : `${t.common.unit}: ${item.unit}`}
                         </p>
                       </div>
 
@@ -488,21 +500,21 @@ function StokDashboard() {
                         className={`text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap flex items-center gap-1 ${statusCfg.badgeClass}`}
                       >
                         <span>{statusCfg.icon}</span>
-                        <span>{statusCfg.shortLabel}</span>
+                        <span>{t.stok.statuses[item.status] ?? statusCfg.shortLabel}</span>
                       </span>
                     </div>
 
                     {/* Stock & Coverage Row */}
                     <div className="grid grid-cols-3 gap-2 bg-neutral-50 border border-neutral-200/80 rounded-xl p-2.5 text-center">
                       <div>
-                        <span className="text-xs text-neutral-500 block">Sisa di Rak</span>
+                        <span className="text-xs text-neutral-500 block">{t.stok.inShelf}</span>
                         <span className="text-sm font-bold text-ink-900 block mt-0.5">
                           {item.stock_qty} {item.unit}
                         </span>
                       </div>
 
                       <div>
-                        <span className="text-xs text-neutral-500 block">Cukup Buat</span>
+                        <span className="text-xs text-neutral-500 block">{t.stok.coverage}</span>
                         <span
                           className={`text-sm font-bold block mt-0.5 ${
                             item.days_of_coverage <= 2
@@ -512,12 +524,12 @@ function StokDashboard() {
                               : "text-emerald-700"
                           }`}
                         >
-                          {item.days_of_coverage} hari
+                          {item.days_of_coverage} {t.common.days}
                         </span>
                       </div>
 
                       <div>
-                        <span className="text-xs text-neutral-500 block">Uang di Rak</span>
+                        <span className="text-xs text-neutral-500 block">{t.stok.shelfValue}</span>
                         <span className="text-sm font-bold text-ink-900 block mt-0.5">
                           {formatIDR(item.total_value_idr)}
                         </span>
@@ -527,7 +539,7 @@ function StokDashboard() {
                     {/* Supplier & Action */}
                     <div className="flex items-center justify-between gap-2 border-t border-border pt-2.5 text-sm">
                       <span className="text-xs text-neutral-600">
-                        Pemasok: <strong>{item.supplier_ref ?? "Toko Grosir"}</strong>
+                        {t.stok.supplier}: <strong>{item.supplier_ref ?? (language === "id" ? "Toko Grosir" : "Wholesaler")}</strong>
                       </span>
 
                       {isUrgent ? (
@@ -537,7 +549,7 @@ function StokDashboard() {
                           className="min-h-[42px] px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl flex items-center gap-1.5 shadow-sm touch-target"
                         >
                           <span>💬</span>
-                          <span>{orderedSku === item.sku ? "✓ Dicatat" : "Pesan WA"}</span>
+                          <span>{orderedSku === item.sku ? t.stok.orderLogged : (language === "id" ? "Pesan WA" : "Reorder WA")}</span>
                         </button>
                       ) : isExpiredRisk ? (
                         <Link
@@ -545,7 +557,7 @@ function StokDashboard() {
                           className="min-h-[42px] px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl flex items-center gap-1.5 shadow-sm touch-target"
                         >
                           <span>🏷️</span>
-                          <span>Beri Promo</span>
+                          <span>{t.stok.givePromo}</span>
                         </Link>
                       ) : (
                         <button
@@ -554,7 +566,7 @@ function StokDashboard() {
                           className="min-h-[42px] px-3.5 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-ink-800 font-semibold text-sm rounded-xl flex items-center gap-1 border border-neutral-300 touch-target"
                         >
                           <span>💬</span>
-                          <span>Kontak</span>
+                          <span>{t.stok.contactBtn}</span>
                         </button>
                       )}
                     </div>
@@ -568,7 +580,7 @@ function StokDashboard() {
         {/* Bottom Reassurance Footnote */}
         <div className="px-4 py-4 text-center">
           <p className="text-xs text-neutral-400">
-            📊 Data stok dihitung otomatis dari foto buku catatan warung dan perputaran kas harian.
+            📊 {t.stok.footerNote}
           </p>
         </div>
       </div>

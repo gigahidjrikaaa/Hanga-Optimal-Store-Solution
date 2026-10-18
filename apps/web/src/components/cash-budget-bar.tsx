@@ -11,6 +11,7 @@
 
 import { formatIDR } from "@/lib/design-system";
 import { useCountUp } from "@/lib/use-count-up";
+import { useLanguage } from "@/lib/i18n/context";
 import type { DailyBriefing } from "@/types";
 
 interface CashBudgetBarProps {
@@ -35,6 +36,7 @@ function shortIDR(amount: number): string {
 }
 
 export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudgetBarProps) {
+  const { t, language } = useLanguage();
   const budget = briefing.budget;
   if (!budget) return null;
 
@@ -69,10 +71,14 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold text-brand-900">
-              💵 Kas hari ini
+              {language === "id" ? "💵 Kas hari ini" : "💵 Purchasing Cash"}
             </span>
             <span
-              title="Uang tunai di kasir yang siap dibelanjakan untuk stok hari ini"
+              title={
+                language === "id"
+                  ? "Uang tunai di kasir yang siap dibelanjakan untuk stok hari ini"
+                  : "Available cash on hand allocated for inventory restock today"
+              }
               className="text-xs text-brand-700 bg-brand-200/80 rounded-full px-2 py-0.5 cursor-help font-bold"
             >
               ?
@@ -84,7 +90,9 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
         </div>
 
         <p className="text-xs text-ink-700 font-medium">
-          💡 Geser slider atau ketuk nominal untuk menyesuaikan belanjaan dengan modal Anda:
+          {language === "id"
+            ? "💡 Geser slider atau ketuk nominal untuk menyesuaikan belanjaan dengan modal Anda:"
+            : "💡 Adjust the slider or tap chips to fit reorders within your available cash:"}
         </p>
 
         <div className="flex flex-wrap gap-2" role="group" aria-label="Kas cepat pilih">
@@ -97,7 +105,7 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
                 disabled={disabled}
                 onClick={() => onChange(chip)}
                 aria-pressed={isActive}
-                title={`Pilih nominal kas ${formatIDR(chip)}`}
+                title={`${language === "id" ? "Pilih nominal kas" : "Select cash amount"} ${formatIDR(chip)}`}
                 className={`min-h-[42px] text-sm px-3.5 py-1.5 font-bold border pressable disabled:opacity-50 touch-target ${
                   isActive
                     ? "bg-brand-600 text-surface border-brand-600 shadow-sm"
@@ -124,7 +132,7 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
             disabled={disabled}
             onChange={(e) => onChange(Number(e.target.value))}
             aria-label="Atur kas hari ini"
-            title="Geser untuk menyesuaikan modal kasir"
+            title={language === "id" ? "Geser untuk menyesuaikan modal kasir" : "Drag to adjust working cash"}
             className="w-full accent-brand-600 disabled:opacity-50 cursor-pointer h-2.5"
           />
           <div className="flex justify-between text-xs text-ink-700 font-semibold">
@@ -137,14 +145,16 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
         {/* Fit row */}
         <div className="flex items-center justify-between pt-1">
           <span className="text-numeric text-sm text-ink-700">
-            Terpakai: <strong className="text-ink-900 font-bold">{formatIDR(committed)}</strong>
+            {language === "id" ? "Terpakai: " : "Committed: "}
+            <strong className="text-ink-900 font-bold">{formatIDR(committed)}</strong>
           </span>
           <span
             className={`text-numeric text-sm font-extrabold ${
               overCash ? "text-danger-600" : "text-brand-800"
             }`}
           >
-            Sisa Kas: {formatIDR(remaining)}
+            {language === "id" ? "Sisa Kas: " : "Remaining: "}
+            {formatIDR(remaining)}
           </span>
         </div>
 
@@ -172,13 +182,20 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
         {budget.deferred_skus.length > 0 && (
           <div className="flex flex-col gap-1 pt-1 border-t border-border/50">
             <span className="text-xs text-warn-700 font-semibold flex items-center gap-1">
-              <span>⏳</span> Ditunda ke jadwal besok (kas dihemat):
+              <span>⏳</span>{" "}
+              {language === "id"
+                ? "Ditunda ke jadwal besok (kas dihemat):"
+                : "Deferred to tomorrow (saving cash):"}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {budget.deferred_skus.map((sku) => (
                 <span
                   key={sku}
-                  title="Pesanan ini ditunda ke esok hari agar uang kas mencukupi kebutuhan pokok prioritas"
+                  title={
+                    language === "id"
+                      ? "Pesanan ini ditunda ke esok hari agar uang kas mencukupi kebutuhan pokok prioritas"
+                      : "Order deferred to tomorrow so cash remains sufficient for urgent staples"
+                  }
                   className="text-caption px-2 py-0.5 cursor-help font-medium"
                   style={{
                     borderRadius: "var(--radius-chip)",

@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { DEMO_DATE, DEMO_SHOP_ID } from "@/lib/constants";
 import { FACTOR_CONFIG } from "@/lib/design-system";
+import { useLanguage } from "@/lib/i18n/context";
 import type { AskResponse, FactorKey } from "@/types";
 
 type AskState = "idle" | "listening" | "thinking" | "speaking" | "error";
@@ -43,6 +44,7 @@ interface AskSheetProps {
 }
 
 export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskSheetProps) {
+  const { t, language } = useLanguage();
   const [question, setQuestion] = useState("");
   const [state, setState] = useState<AskState>("idle");
   const [answer, setAnswer] = useState<AskResponse | null>(null);
@@ -56,13 +58,13 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
       if (muted || typeof window === "undefined" || !window.speechSynthesis) return;
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "id-ID";
+      utterance.lang = language === "id" ? "id-ID" : "en-US";
       utterance.rate = 0.95;
       utterance.onend = () => setState((s) => (s === "speaking" ? "idle" : s));
       window.speechSynthesis.speak(utterance);
       setState("speaking");
     },
-    [muted]
+    [muted, language]
   );
 
   const ask = useCallback(
@@ -82,11 +84,11 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         speak(response.answer_bahasa);
         setState("idle");
       } catch {
-        setError("Tanya Hanga belum bisa menjawab. Coba lagi ya, Bu.");
+        setError(t.askHanga.errorNote);
         setState("error");
       }
     },
-    [cash, scenario, speak]
+    [cash, scenario, speak, t.askHanga.errorNote]
   );
 
   // Auto-ask the seeded card question once per open.
@@ -225,13 +227,12 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         {/* Starter suggestion chips when idle & no question yet */}
         {!answer && state === "idle" && (
           <div className="flex flex-col gap-2 py-1">
-            <p className="text-xs text-ink-600 font-medium">💡 Contoh pertanyaan:</p>
+            <p className="text-xs text-ink-600 font-medium">💡 {t.askHanga.popularQuestions}</p>
             <div className="flex flex-wrap gap-1.5">
               {[
-                "Kenapa telur dipesan sekarang?",
-                "Bisa tunda pesanan kopi dulu?",
-                "Berapa sisa kas jika belanja sekarang?",
-                "Kapan batas aman susu sebelum basi?",
+                t.askHanga.sample1,
+                t.askHanga.sample2,
+                t.askHanga.sample3,
               ].map((starter) => (
                 <button
                   key={starter}
@@ -299,8 +300,8 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
               type="button"
               onClick={startListening}
               disabled={busy}
-              aria-label="Tanya dengan suara"
-              title="Tekan untuk bicara langsung via mikrofon"
+              aria-label={t.askHanga.voiceBtn}
+              title={language === "id" ? "Tekan untuk bicara langsung via mikrofon" : "Tap to speak directly via microphone"}
               className="touch-target text-xl bg-brand-100 text-brand-800 disabled:opacity-50 hover:bg-brand-200 transition-colors"
               style={{ borderRadius: "var(--radius-badge)" }}
             >
@@ -310,23 +311,25 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
               type="text"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Contoh: kenapa pesan gula 15 kg?"
-              aria-label="Ketik pertanyaan untuk Hanga"
+              placeholder={t.askHanga.placeholder}
+              aria-label={t.askHanga.title}
               className="touch-target flex-1 px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
               style={{ borderRadius: "var(--radius-chip)" }}
             />
             <button
               type="submit"
               disabled={busy || question.trim().length < 2}
-              title="Kirim pertanyaan"
+              title={t.askHanga.sendBtn}
               className="touch-target px-4 text-body font-semibold text-surface bg-brand-600 disabled:opacity-50 pressable"
               style={{ borderRadius: "var(--radius-chip)" }}
             >
-              Tanya
+              {t.askHanga.sendBtn}
             </button>
           </form>
           <p className="text-[11px] text-ink-600 text-center">
-            🎙️ Tekan mikrofon untuk bicara atau ketik pertanyaan langsung dalam Bahasa Indonesia
+            {language === "id"
+              ? "🎙️ Tekan mikrofon untuk bicara atau ketik pertanyaan langsung dalam Bahasa Indonesia"
+              : "🎙️ Tap the microphone to speak or type your question in English"}
           </p>
         </div>
       </div>

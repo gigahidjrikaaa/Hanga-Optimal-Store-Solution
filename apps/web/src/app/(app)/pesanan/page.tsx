@@ -11,9 +11,11 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { HangaLogo } from "@/components/hanga-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { api } from "@/lib/api";
 import { DEMO_SHOP_ID } from "@/lib/constants";
 import { formatIDR } from "@/lib/design-system";
+import { useLanguage } from "@/lib/i18n/context";
 import type { Order } from "@/types";
 
 const DEMO_ORDERS: Order[] = [
@@ -86,9 +88,9 @@ const DEMO_ORDERS: Order[] = [
   },
 ];
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, lang: string): string {
   try {
-    return new Intl.DateTimeFormat("id-ID", {
+    return new Intl.DateTimeFormat(lang === "id" ? "id-ID" : "en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -105,6 +107,7 @@ function itemsLabel(order: Order): string {
 }
 
 export default function PesananPage() {
+  const { t, language } = useLanguage();
   const [orders, setOrders] = useState<Order[]>(DEMO_ORDERS);
 
   useEffect(() => {
@@ -137,17 +140,20 @@ export default function PesananPage() {
     <AppShell>
       <div className="flex flex-col gap-5 py-5 px-4">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="flex items-center justify-between border-b border-border/60 pb-3 gap-2">
           <HangaLogo variant="compact" size="sm" />
-          <span className="text-caption text-ink-600 font-medium">
-            {orders.length} Pesanan Tercatat
-          </span>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher variant="compact" />
+            <span className="text-caption text-ink-600 font-medium shrink-0">
+              {t.pesanan.summaryCount.replace("{count}", String(orders.length))}
+            </span>
+          </div>
         </div>
 
         <div>
-          <h1 className="text-title text-ink-900">Daftar Pesanan Restock</h1>
+          <h1 className="text-title text-ink-900">{t.pesanan.title}</h1>
           <p className="text-body text-ink-600 mt-1">
-            Kirim draf pesanan langsung ke agen grosir langganan via WhatsApp.
+            {t.pesanan.subtitle}
           </p>
         </div>
 
@@ -167,14 +173,16 @@ export default function PesananPage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-caption font-semibold text-ink-600">
-                    {formatDate(order.created_at)}
+                    {formatDate(order.created_at, language)}
                   </span>
                   <span
-                    className={`text-caption font-bold px-2 py-0.5 rounded-full ${
+                    className={`text-caption font-bold px-2.5 py-0.5 rounded-full ${
                       isDraft ? "bg-warn-100 text-warn-600" : "bg-brand-100 text-brand-800"
                     }`}
                   >
-                    {isDraft ? "DRAF PESANAN" : "TERKIRIM"}
+                    {isDraft
+                      ? (language === "id" ? "DRAF PESANAN" : "DRAFT ORDER")
+                      : (language === "id" ? "TERKIRIM" : "SENT VIA WA")}
                   </span>
                 </div>
 
@@ -195,8 +203,12 @@ export default function PesananPage() {
                     rel="noopener noreferrer"
                     title={
                       isDraft
-                        ? "Buka WhatsApp dengan pesan pesanan otomatis dan tandai sebagai terkirim"
-                        : "Buka kembali percakapan WhatsApp dengan pemasok"
+                        ? (language === "id"
+                            ? "Buka WhatsApp dengan pesan pesanan otomatis dan tandai sebagai terkirim"
+                            : "Open WhatsApp with pre-filled order and mark as sent")
+                        : (language === "id"
+                            ? "Buka kembali percakapan WhatsApp dengan pemasok"
+                            : "Reopen WhatsApp conversation with supplier")
                     }
                     onClick={() => {
                       if (isDraft) markAsSent(order.id);
@@ -204,7 +216,11 @@ export default function PesananPage() {
                     className="touch-target flex-1 py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-caption text-center flex items-center justify-center gap-1.5 transition-colors shadow-sm"
                   >
                     <span>💬</span>
-                    <span>{isDraft ? "Kirim via WhatsApp" : "Buka Chat WhatsApp"}</span>
+                    <span>
+                      {isDraft
+                        ? (language === "id" ? "Kirim via WhatsApp" : "Send via WhatsApp")
+                        : t.pesanan.openWa}
+                    </span>
                   </a>
                 </div>
               </div>

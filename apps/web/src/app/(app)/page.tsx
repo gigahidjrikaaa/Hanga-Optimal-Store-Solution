@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { HangaLogo } from "@/components/hanga-logo";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { ScenarioToggle } from "@/components/scenario-toggle";
 import { CashBudgetBar } from "@/components/cash-budget-bar";
 import { AskSheet } from "@/components/ask-hanga";
@@ -22,12 +23,14 @@ import { InventoryHealthBar } from "@/components/inventory-health-bar";
 import { api } from "@/lib/api";
 import { DEMO_DATE, DEMO_SHOP_ID } from "@/lib/constants";
 import { DEMO_BRIEFINGS, DEMO_INVENTORY } from "@/lib/demo-data";
+import { useLanguage } from "@/lib/i18n/context";
 import type { ActionType, DailyBriefing, InventoryOverview, Scenario } from "@/types";
 
 // Spec §4 card ordering (client-side enforced).
 const CARD_ORDER: ActionType[] = ["REORDER", "PROMO", "HOLD", "SKIP"];
 
 export default function BerandaPage() {
+  const { t, localizeBriefing } = useLanguage();
   const [activeScenario, setActiveScenario] = useState<Scenario>("BASELINE");
   const [cash, setCash] = useState<number | null>(null);
   const [briefing, setBriefing] = useState<DailyBriefing | null>(
@@ -84,30 +87,30 @@ export default function BerandaPage() {
       .catch(() => setInventoryOverview(DEMO_INVENTORY));
   }, []);
 
+  // Localize briefing for the current language
+  const activeBriefing = localizeBriefing(briefing);
+
   return (
     <AppShell>
       <div className="flex flex-col gap-4 py-4">
         {/* Top Branding & Greeting Bar */}
-        <div className="px-4 flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="px-4 flex items-center justify-between border-b border-border/60 pb-3 gap-2">
           <HangaLogo variant="full" size="sm" />
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brand-100/70 text-brand-800 text-caption font-semibold">
-            <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
-            <span>Stok Aktif</span>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher variant="compact" />
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brand-100/70 text-brand-800 text-caption font-semibold shrink-0">
+              <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
+              <span>{t.common.activeStock}</span>
+            </div>
           </div>
         </div>
 
         {/* Greeting & Headline */}
         <div className="px-4">
-          <p className="text-caption text-ink-600">Selamat pagi, Bu Sari 👋</p>
-          {briefing ? (
-            <h1 className="text-display text-ink-900 mt-1">
-              {briefing.headline}
-            </h1>
-          ) : (
-            <h1 className="text-display text-ink-900 mt-1">
-              Briefing Hari Ini
-            </h1>
-          )}
+          <p className="text-caption text-ink-600">{t.briefing.greeting}</p>
+          <h1 className="text-display text-ink-900 mt-1">
+            {activeBriefing?.headline ?? t.briefing.defaultHeadline}
+          </h1>
         </div>
 
         {/* Executive Inventory Health Bar (Tier 1) */}
@@ -121,9 +124,9 @@ export default function BerandaPage() {
         />
 
         {/* Cash budget bar — input + live bundle refit (v1.1) */}
-        {briefing && !isLoading && briefing.budget && (
+        {activeBriefing && !isLoading && activeBriefing.budget && (
           <CashBudgetBar
-            briefing={briefing}
+            briefing={activeBriefing}
             cash={cash}
             onChange={setCash}
             disabled={isLoading}
@@ -140,15 +143,15 @@ export default function BerandaPage() {
         )}
 
         {/* Briefing content */}
-        {briefing && !isLoading && (
+        {activeBriefing && !isLoading && (
           <>
             {/* Risk banners */}
-            <RiskBanner risks={briefing.risks} />
+            <RiskBanner risks={activeBriefing.risks} />
 
             {/* Recommendation cards, spec §4 order: REORDER → PROMO → HOLD → SKIP.
                 Staggered rise-in (globals.css §9) — 70ms per card. */}
             <div className="flex flex-col gap-3 px-4">
-              {[...briefing.recommendations]
+              {[...activeBriefing.recommendations]
                 .sort(
                   (a, b) =>
                     CARD_ORDER.indexOf(a.action) - CARD_ORDER.indexOf(b.action)
@@ -161,7 +164,7 @@ export default function BerandaPage() {
                   >
                     <RecommendationCard
                       recommendation={rec}
-                      scenario={briefing.scenario}
+                      scenario={activeBriefing.scenario}
                       onAsk={(question) => openAsk(question)}
                     />
                   </div>
@@ -176,41 +179,41 @@ export default function BerandaPage() {
                 className="touch-target w-full py-3 px-4 text-body font-semibold text-brand-800 bg-brand-100/70 border border-brand-600/40"
                 style={{ borderRadius: "var(--radius-card)" }}
               >
-                🎤 Tanya Hanga — tanya apa saja soal briefing ini
+                {t.briefing.askHangaBtn}
               </button>
             </div>
 
             {/* Movers */}
             <MoverList
-              title="📈 Barang Laris"
-              movers={briefing.movers.fast}
+              title={t.briefing.fastMovers}
+              movers={activeBriefing.movers.fast}
               type="fast"
             />
             <MoverList
-              title="📉 Barang Lambat"
-              movers={briefing.movers.slow}
+              title={t.briefing.slowMovers}
+              movers={activeBriefing.movers.slow}
               type="slow"
             />
 
             {/* Baseline comparison footnote (hidden until the backtest fills deltas) */}
-            {briefing.baseline_compare &&
-              briefing.baseline_compare.deltas.waste_pct != null &&
-              briefing.baseline_compare.deltas.stockout_pct != null && (
+            {activeBriefing.baseline_compare &&
+              activeBriefing.baseline_compare.deltas.waste_pct != null &&
+              activeBriefing.baseline_compare.deltas.stockout_pct != null && (
                 <div className="px-4">
                   <p className="text-caption text-ink-600">
                     Dibandingkan kebijakan rata-rata 7 hari: buang{" "}
-                    {briefing.baseline_compare.deltas.waste_pct}%, habis stok{" "}
-                    {briefing.baseline_compare.deltas.stockout_pct}%
+                    {activeBriefing.baseline_compare.deltas.waste_pct}%, habis stok{" "}
+                    {activeBriefing.baseline_compare.deltas.stockout_pct}%
                   </p>
                 </div>
               )}
 
             {/* Data quality footnote */}
-            {briefing.data_quality && (
+            {activeBriefing.data_quality && (
               <div className="px-4 pb-4">
                 <p className="text-caption text-neutral-400">
-                  Data: {briefing.data_quality.coverage_days} hari ·{" "}
-                  {briefing.data_quality.extraction_confirmed_lines} baris dikonfirmasi
+                  Data: {activeBriefing.data_quality.coverage_days} hari ·{" "}
+                  {activeBriefing.data_quality.extraction_confirmed_lines} baris dikonfirmasi
                 </p>
               </div>
             )}
@@ -218,7 +221,7 @@ export default function BerandaPage() {
         )}
 
         {/* Empty state */}
-        {!briefing && !isLoading && (
+        {!activeBriefing && !isLoading && (
           <div className="px-4 py-12 text-center">
             <p className="text-4xl mb-4 float-soft">📊</p>
             <h2 className="text-heading text-ink-900">Belum ada briefing</h2>

@@ -11,10 +11,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CaptureCard } from "@/components/capture-card";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { DEMO_SHOP_ID } from "@/lib/constants";
+import { useLanguage } from "@/lib/i18n/context";
 
 export default function CapturePage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isUploading, setIsUploading] = useState(false);
 
   const handleCapture = async (file: File) => {
@@ -48,11 +51,14 @@ export default function CapturePage() {
   return (
     <AppShell>
       <div className="flex flex-col gap-6 py-6 px-4">
-        <div>
-          <h1 className="text-title text-ink-900">Catat Penjualan</h1>
-          <p className="text-body text-ink-600 mt-1">
-            Foto halaman buku catatan Anda. AI akan membaca dan mencatat otomatis.
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-title text-ink-900">{t.capture.title}</h1>
+            <p className="text-body text-ink-600 mt-1">
+              {t.capture.subtitle}
+            </p>
+          </div>
+          <LanguageSwitcher variant="compact" />
         </div>
 
         <CaptureCard onCapture={handleCapture} isUploading={isUploading} />
@@ -65,12 +71,11 @@ export default function CapturePage() {
             boxShadow: "var(--shadow-card)",
           }}
         >
-          <h3 className="text-heading text-ink-900">💡 Tips foto yang baik</h3>
+          <h3 className="text-heading text-ink-900">{t.capture.tipsTitle}</h3>
           <ul className="text-body text-ink-600 list-disc pl-5 flex flex-col gap-1">
-            <li>Cahaya cukup terang, tanpa bayangan</li>
-            <li>Foto satu halaman penuh</li>
-            <li>Tulisan terlihat jelas</li>
-            <li>Letakkan buku di permukaan rata</li>
+            {t.capture.tips.map((tip, idx) => (
+              <li key={idx}>{tip}</li>
+            ))}
           </ul>
         </div>
       </div>
