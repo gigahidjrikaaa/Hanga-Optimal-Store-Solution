@@ -207,6 +207,45 @@ export interface Translations {
     footnote: string;
     shutterText: string;
   };
+  tutorial: {
+    welcomeTitle: string;
+    welcomeDesc: string;
+    startBtn: string;
+    laterBtn: string;
+    stepCounter: string;
+    nextBtn: string;
+    prevBtn: string;
+    finishBtn: string;
+    skipBtn: string;
+    listenBtn: string;
+    stopListenBtn: string;
+    helpBtnTooltip: string;
+    helpBtnLabel: string;
+    replayTourBtn: string;
+    replayTourDesc: string;
+    steps: {
+      healthBar: {
+        title: string;
+        desc: string;
+      };
+      scenario: {
+        title: string;
+        desc: string;
+      };
+      recommendation: {
+        title: string;
+        desc: string;
+      };
+      whatsapp: {
+        title: string;
+        desc: string;
+      };
+      navigation: {
+        title: string;
+        desc: string;
+      };
+    };
+  };
 }
 
 export const TRANSLATIONS: Record<Language, Translations> = {
@@ -481,6 +520,45 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       footnote: "Warung Anda, data Anda. Kami hanya membacanya untuk membantu Anda.",
       shutterText: "Warung buka — selamat bekerja, Bu. 🌅",
     },
+    tutorial: {
+      welcomeTitle: "Panduan Kilat Hanga 💡",
+      welcomeDesc: "Selamat datang Bu Sari! Mau ikuti panduan 1 menit untuk memahami cara membaca stok dan pesan barang ke grosir?",
+      startBtn: "Mulai Panduan (1 Menit) 🚀",
+      laterBtn: "Nanti Saja",
+      stepCounter: "Langkah {current} dari {total}",
+      nextBtn: "Lanjut →",
+      prevBtn: "← Kembali",
+      finishBtn: "Mengerti & Mulai! ✨",
+      skipBtn: "Lewati",
+      listenBtn: "🔊 Dengarkan",
+      stopListenBtn: "⏹️ Berhenti",
+      helpBtnTooltip: "Buka panduan penggunaan aplikasi",
+      helpBtnLabel: "Panduan",
+      replayTourBtn: "Ulangi Panduan Aplikasi",
+      replayTourDesc: "Lihat kembali penjelasan fungsi layar utama dan cara pemesanan barang ke grosir.",
+      steps: {
+        healthBar: {
+          title: "1. Ringkasan Stok & Uang di Rak",
+          desc: "Bagian ini merangkum barang yang hampir habis dan nilai modal barang yang tersimpan di rak warung Anda pagi ini.",
+        },
+        scenario: {
+          title: "2. Situasi & Peristiwa Warung",
+          desc: "Pilih situasi saat ini: Hari Biasa, Lebaran, Gajian, atau Hujan. Rekomendasi otomatis menyesuaikan perkiraan pembeli.",
+        },
+        recommendation: {
+          title: "3. Saran Belanja AI & Alasan",
+          desc: "Setiap kartu memberi saran jelas: Pesan Ulang, Promo diskon, Tahan, atau Lewati belanja, lengkap dengan alasan logisnya.",
+        },
+        whatsapp: {
+          title: "4. Pesan ke Grosir via WhatsApp",
+          desc: "Cukup satu ketukan untuk memesan ke grosir. Pesanan otomatis tersusun rapi dalam format pesan resmi toko Anda.",
+        },
+        navigation: {
+          title: "5. Menu Navigasi Warung",
+          desc: "Gunakan menu bawah untuk melihat seluruh daftar barang (Stok), riwayat pesanan (Pesanan), atau profil toko Anda.",
+        },
+      },
+    },
   },
   en: {
     nav: {
@@ -752,6 +830,45 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       demoSub: "Explore as Bu Sari without signing up",
       footnote: "Your store, your data. Hanga AI only reads it to help you optimize.",
       shutterText: "Store is open — have a fruitful day! 🌅",
+    },
+    tutorial: {
+      welcomeTitle: "Quick Tour of Hanga 💡",
+      welcomeDesc: "Welcome! Would you like a 1-minute interactive walkthrough to see how AI inventory intelligence and ordering work?",
+      startBtn: "Start Guided Tour (1 Min) 🚀",
+      laterBtn: "Maybe Later",
+      stepCounter: "Step {current} of {total}",
+      nextBtn: "Next →",
+      prevBtn: "← Back",
+      finishBtn: "Got It & Start! ✨",
+      skipBtn: "Skip Tour",
+      listenBtn: "🔊 Listen",
+      stopListenBtn: "⏹️ Stop",
+      helpBtnTooltip: "Open interactive walkthrough tutorial",
+      helpBtnLabel: "Tour",
+      replayTourBtn: "Replay Guided Tour",
+      replayTourDesc: "Review the interactive walkthrough explaining the morning briefing, scenario simulations, and WhatsApp restock.",
+      steps: {
+        healthBar: {
+          title: "1. Inventory & Working Capital",
+          desc: "This card summarizes urgent stockout risks and total capital currently tied up on your retail shelves.",
+        },
+        scenario: {
+          title: "2. Real-World Scenario Simulation",
+          desc: "Toggle between Normal, Payday, Eid, or Rain conditions. AI recomputes demand multipliers and order targets in real time.",
+        },
+        recommendation: {
+          title: "3. Actionable AI Recommendations",
+          desc: "Every SKU receives an explicit decision (Reorder, Promo, Hold, or Skip) with confidence ratings and causal drivers.",
+        },
+        whatsapp: {
+          title: "4. 1-Tap Wholesale WhatsApp Order",
+          desc: "Tap to generate a pre-formatted purchase order sent directly to your wholesale supplier's WhatsApp number.",
+        },
+        navigation: {
+          title: "5. Complete Navigation Menu",
+          desc: "Use the bottom bar to view your full stock catalog (Stock), track wholesale orders (Orders), or manage store settings.",
+        },
+      },
     },
   },
 };

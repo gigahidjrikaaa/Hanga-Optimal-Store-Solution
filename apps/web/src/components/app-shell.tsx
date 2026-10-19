@@ -23,6 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Bottom navigation */}
       <nav
+        id="tour-bottom-nav"
         className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-surface border-t border-border"
         style={{ boxShadow: "var(--shadow-sheet)" }}
       >

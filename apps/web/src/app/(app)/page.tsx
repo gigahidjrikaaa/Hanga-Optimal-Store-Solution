@@ -20,6 +20,7 @@ import { RiskBanner } from "@/components/risk-banner";
 import { RecommendationCard } from "@/components/recommendation-card";
 import { MoverList } from "@/components/mover-list";
 import { InventoryHealthBar } from "@/components/inventory-health-bar";
+import { InteractiveTutorial } from "@/components/interactive-tutorial";
 import { api } from "@/lib/api";
 import { DEMO_DATE, DEMO_SHOP_ID } from "@/lib/constants";
 import { DEMO_BRIEFINGS, DEMO_INVENTORY } from "@/lib/demo-data";
@@ -40,6 +41,19 @@ export default function BerandaPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [askSeed, setAskSeed] = useState<string | undefined>(undefined);
+  const [tourOpen, setTourOpen] = useState(false);
+
+  // Check ?tour=true query param
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("tour") === "true") {
+        setTourOpen(true);
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, []);
 
   const openAsk = useCallback((question?: string) => {
     setAskSeed(question);
@@ -96,7 +110,16 @@ export default function BerandaPage() {
         {/* Top Branding & Greeting Bar */}
         <div className="px-4 flex items-center justify-between border-b border-border/60 pb-3 gap-2">
           <HangaLogo variant="full" size="sm" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setTourOpen(true)}
+              title={t.tutorial.helpBtnTooltip}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface border border-border text-ink-700 hover:bg-canvas text-caption font-semibold shrink-0 transition-colors shadow-xs"
+            >
+              <span>💡</span>
+              <span className="hidden sm:inline">{t.tutorial.helpBtnLabel}</span>
+            </button>
             <LanguageSwitcher variant="compact" />
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brand-100/70 text-brand-800 text-caption font-semibold shrink-0">
               <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
@@ -114,14 +137,18 @@ export default function BerandaPage() {
         </div>
 
         {/* Executive Inventory Health Bar (Tier 1) */}
-        <InventoryHealthBar overview={inventoryOverview} />
+        <div id="tour-health-bar">
+          <InventoryHealthBar overview={inventoryOverview} />
+        </div>
 
         {/* Scenario toggle */}
-        <ScenarioToggle
-          active={activeScenario}
-          onSelect={setActiveScenario}
-          disabled={isLoading}
-        />
+        <div id="tour-scenario-toggle">
+          <ScenarioToggle
+            active={activeScenario}
+            onSelect={setActiveScenario}
+            disabled={isLoading}
+          />
+        </div>
 
         {/* Cash budget bar — input + live bundle refit (v1.1) */}
         {activeBriefing && !isLoading && activeBriefing.budget && (
@@ -159,6 +186,7 @@ export default function BerandaPage() {
                 .map((rec, index) => (
                   <div
                     key={`${rec.action}-${rec.sku}`}
+                    id={index === 0 ? "tour-recommendation-card" : undefined}
                     className="rise-in"
                     style={{ animationDelay: `${120 + index * 70}ms` }}
                   >
@@ -166,6 +194,7 @@ export default function BerandaPage() {
                       recommendation={rec}
                       scenario={activeBriefing.scenario}
                       onAsk={(question) => openAsk(question)}
+                      waButtonId={index === 0 ? "tour-order-wa" : undefined}
                     />
                   </div>
                 ))}
@@ -240,6 +269,12 @@ export default function BerandaPage() {
         seedQuestion={askSeed}
         scenario={activeScenario}
         cash={cash}
+      />
+
+      {/* Interactive Guided Tour */}
+      <InteractiveTutorial
+        forceOpen={tourOpen}
+        onClose={() => setTourOpen(false)}
       />
     </AppShell>
   );

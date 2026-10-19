@@ -28,9 +28,10 @@ interface RecommendationCardProps {
   scenario?: string;
   /** Opens the Tanya Hanga sheet with a grounded question about this card. */
   onAsk?: (question: string) => void;
+  waButtonId?: string;
 }
 
-export function RecommendationCard({ recommendation, scenario, onAsk }: RecommendationCardProps) {
+export function RecommendationCard({ recommendation, scenario, onAsk, waButtonId }: RecommendationCardProps) {
   const { t, language } = useLanguage();
   const {
     action,
@@ -223,6 +224,7 @@ export function RecommendationCard({ recommendation, scenario, onAsk }: Recommen
             <strong>{order_draft.supplier_ref}</strong> · ±{formatIDR(order_draft.est_cost_idr)}
           </p>
           <a
+            id={waButtonId}
             href={order_draft.wa_deep_link}
             target="_blank"
             rel="noopener noreferrer"

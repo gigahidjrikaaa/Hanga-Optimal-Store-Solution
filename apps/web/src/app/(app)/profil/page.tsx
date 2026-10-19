@@ -81,6 +81,36 @@ export default function ProfilPage() {
           <LanguageSwitcher variant="full" />
         </div>
 
+        {/* In-App Tutorial Replay Card */}
+        <div
+          className="bg-surface p-4 flex flex-col gap-3 border border-border"
+          style={{
+            borderRadius: "var(--radius-card)",
+            boxShadow: "var(--shadow-card)",
+          }}
+        >
+          <div>
+            <h3 className="text-heading text-ink-900 font-semibold flex items-center gap-2">
+              <span>💡</span> {t.tutorial.replayTourBtn}
+            </h3>
+            <p className="text-caption text-ink-600 mt-1">
+              {t.tutorial.replayTourDesc}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("hanga_tour_completed");
+              }
+              router.push("/?tour=true");
+            }}
+            className="touch-target w-full py-3 px-4 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-600/30 text-brand-800 font-bold text-body flex items-center justify-center gap-2 transition-colors shadow-xs"
+          >
+            <span>🚀</span> {t.tutorial.startBtn}
+          </button>
+        </div>
+
         {/* Supplier / Wholesaler Section */}
         <div
           className="bg-surface p-4 flex flex-col gap-3 border border-border"
