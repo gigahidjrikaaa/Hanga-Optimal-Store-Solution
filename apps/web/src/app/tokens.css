@@ -1,0 +1,69 @@
+:root {
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+  /* App scale, fixed (ratio 1.125 to 1.2): 13 · 15 · 17 · 20 · 24 · 28. Body 17px per design_system.md §5 (demo stage readability). */
+  --text-xs: 0.8125rem; --text-sm: 0.9375rem; --text-md: 1.0625rem; --text-lg: 1.25rem; --text-xl: 1.5rem; --text-2xl: 1.75rem; --text-3xl: 1.75rem;
+  --text-display-s: 1.5rem; --text-display: 1.75rem; --text-section: 1.5rem; --text-title: 1.25rem; --text-lead: 1.0625rem;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in: cubic-bezier(0.7, 0, 0.84, 0); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms; --dur-long: 420ms;
+  --container: 480px; --gutter: 20px; --gap-columns: 16px; --section-gap-s: 24px; --section-gap: 32px; --section-gap-l: 40px;
+  --z-base: 1; --z-raised: 10; --z-dropdown: 100; --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
+
+  /* Hanga brand, read from globals.css + docs/design_system.md v1.1. Never used raw past this block. */
+  --color-brand-100: #DEF7EC;
+  --color-brand-600: #0E9F6E;
+  --color-brand-800: #046C4E;
+
+  /* Paper family, tinted toward the brand hue (gate 7: no pure absolute surface) */
+  --color-paper: #F3F7F4;   /* app canvas (was #F6F8FA) */
+  --color-paper-2: #FDFEFD; /* cards, sheets (was #FFFFFF) */
+  --color-paper-3: #E9F0EB; /* wells, inset tracks, skeletons */
+
+  --color-ink: #101828;
+  --color-ink-2: #344054;
+  --color-muted: #475467;
+  --color-rule: #E4E7EC;
+
+  --color-accent: #0E9F6E;
+  --color-accent-ink: var(--color-paper-2); /* the paper's brightest step as ink on fill (7b: no pure absolute) */
+  --color-focus: #046C4E;
+
+  /* State colours (design_system.md §1) */
+  --color-warn: #B54708;    /* warn text, darkened from #F79009 for 4.5:1 on the tint */
+  --color-warn-bg: #FEF0C7;
+  --color-danger: #B42318;  /* danger text, darkened from #D92D20 for 4.5:1 on the tint */
+  --color-danger-bg: #FEE4E2;
+  --color-danger-fill: #D92D20; /* the danger fill itself (white text on it passes) */
+  --color-info: #1570EF;
+  --color-info-bg: #EAF1FC;
+  --color-neutral: #98A2B3;
+
+  /* Scene — the dawn sun on /masuk and the splash */
+  --color-sun: #FDC348;
+  --color-sun-deep: #F79009;
+  --color-success: #046C4E;
+  --color-error: #B42318;
+
+  /* Project aliases — existing components and Tailwind theme read these */
+  --color-surface: var(--color-paper-2);
+  --color-canvas: var(--color-paper);
+  --color-border: var(--color-rule);
+  --color-ink-900: var(--color-ink);
+  --color-ink-600: var(--color-muted);
+  --color-warn-600: var(--color-warn);
+  --color-warn-100: var(--color-warn-bg);
+  --color-danger-600: var(--color-danger);
+  --color-danger-100: var(--color-danger-bg);
+  --color-info-600: var(--color-info);
+  --color-neutral-400: var(--color-neutral);
+
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-outlier: var(--font-body);
+  --display-weight: 800;
+
+  /* Radius per nesting level: chip 8 inside card 12 inside sheet 16 */
+  --radius-card: 12px; --radius-chip: 8px; --radius-sheet: 16px; --radius-pill: 999px; --rule-hair: 1px;
+  --shadow-card: 0 1px 2px oklch(20% 0.01 170 / 0.06);
+  --shadow-sheet: 0 -4px 16px oklch(20% 0.01 170 / 0.10);
+  --tracking-display: -0.02em;
+}

@@ -3,9 +3,12 @@
  *
  * Maps from data model enums to UI labels, icons, and colors.
  * All user-facing copy in Bahasa Indonesia (design_system.md §0, principle 4).
+ * Icons come from components/icons.tsx (one stroke library); colours are
+ * design.md tokens — never raw Tailwind palette classes.
  */
 
 import type { ActionType, Confidence, FactorKey, Scenario } from "@/types";
+import type { IconName } from "@/components/icons";
 
 // ---------------------------------------------------------------------------
 // Scenario labels for the ScenarioToggle
@@ -34,15 +37,15 @@ export const ACTION_BADGES: Record<ActionType, ActionBadgeConfig> = {
   },
   PROMO: {
     label: "Promo",
-    className: "bg-warn-100 text-warn-600",
+    className: "bg-warn-bg text-warn",
   },
   HOLD: {
     label: "Tahan",
-    className: "bg-canvas text-ink-600",
+    className: "bg-paper-3 text-ink-2",
   },
   SKIP: {
     label: "Lewati",
-    className: "bg-canvas text-neutral-400",
+    className: "bg-paper-3 text-neutral-400",
   },
 };
 
@@ -66,25 +69,25 @@ export const CONFIDENCE_CONFIG: Record<Confidence, ConfidenceConfig> = {
 // ---------------------------------------------------------------------------
 
 interface FactorConfig {
-  icon: string;
+  icon: IconName;
   label: string;
 }
 
 export const FACTOR_CONFIG: Record<FactorKey, FactorConfig> = {
-  PAYDAY: { icon: "💰", label: "Gajian" },
-  WEEKEND: { icon: "📅", label: "Akhir pekan" },
-  RAIN: { icon: "🌧️", label: "Hujan" },
-  RAIN_TOMORROW: { icon: "🌧️", label: "Hujan besok" },
-  LEBARAN_T14: { icon: "🕌", label: "Lebaran +14hr" },
-  LEBARAN_WEEK: { icon: "🕌", label: "Minggu Lebaran" },
-  EVENT_KONDANGAN: { icon: "💒", label: "Kondangan" },
-  EVENT_PASAR: { icon: "🏪", label: "Hari pasar" },
-  SCHOOL_TERM: { icon: "🎒", label: "Musim sekolah" },
-  TREND_UP: { icon: "📈", label: "Tren naik" },
-  TREND_DOWN: { icon: "📉", label: "Tren turun" },
-  WASTE_RISK: { icon: "⚠️", label: "Risiko buang" },
-  LOW_DATA: { icon: "📊", label: "Data sedikit" },
-  CASH_TIGHT: { icon: "💵", label: "Kas terbatas" },
+  PAYDAY: { icon: "banknote", label: "Gajian" },
+  WEEKEND: { icon: "calendar", label: "Akhir pekan" },
+  RAIN: { icon: "rain", label: "Hujan" },
+  RAIN_TOMORROW: { icon: "rain", label: "Hujan besok" },
+  LEBARAN_T14: { icon: "moon", label: "Lebaran +14hr" },
+  LEBARAN_WEEK: { icon: "moon", label: "Minggu Lebaran" },
+  EVENT_KONDANGAN: { icon: "gift", label: "Kondangan" },
+  EVENT_PASAR: { icon: "store", label: "Hari pasar" },
+  SCHOOL_TERM: { icon: "school", label: "Musim sekolah" },
+  TREND_UP: { icon: "trend-up", label: "Tren naik" },
+  TREND_DOWN: { icon: "trend-down", label: "Tren turun" },
+  WASTE_RISK: { icon: "alert", label: "Risiko buang" },
+  LOW_DATA: { icon: "chart", label: "Data sedikit" },
+  CASH_TIGHT: { icon: "wallet", label: "Kas terbatas" },
 };
 
 // ---------------------------------------------------------------------------
@@ -95,14 +98,14 @@ export interface NavTab {
   key: string;
   label: string;
   href: string;
-  icon: string;
+  icon: IconName;
 }
 
 export const NAV_TABS: NavTab[] = [
-  { key: "beranda", label: "Beranda", href: "/", icon: "🏠" },
-  { key: "stok", label: "Stok", href: "/stok", icon: "📦" },
-  { key: "pesanan", label: "Pesanan", href: "/pesanan", icon: "📋" },
-  { key: "profil", label: "Profil", href: "/profil", icon: "👤" },
+  { key: "beranda", label: "Beranda", href: "/", icon: "home" },
+  { key: "stok", label: "Stok", href: "/stok", icon: "package" },
+  { key: "pesanan", label: "Pesanan", href: "/pesanan", icon: "clipboard" },
+  { key: "profil", label: "Profil", href: "/profil", icon: "user" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -135,37 +138,36 @@ export const INVENTORY_STATUS_CONFIG = {
   CRITICAL: {
     label: "Mau Habis! Perlu Belanja",
     shortLabel: "Mau Habis",
-    badgeClass: "bg-red-100 text-red-800 border border-red-300",
-    pillClass: "bg-red-500 text-white",
-    icon: "🚨",
+    badgeClass: "bg-danger-bg text-danger",
+    pillClass: "bg-danger-fill text-white",
+    icon: "alert",
   },
   EXPIRED_RISK: {
     label: "Risiko Basi / Rusak",
     shortLabel: "Risiko Basi",
-    badgeClass: "bg-amber-100 text-amber-800 border border-amber-300",
-    pillClass: "bg-amber-500 text-white",
-    icon: "⚠️",
+    badgeClass: "bg-warn-bg text-warn",
+    pillClass: "bg-warn text-white",
+    icon: "clock",
   },
   LOW: {
     label: "Stok Menipis",
     shortLabel: "Menipis",
-    badgeClass: "bg-orange-100 text-orange-800 border border-orange-300",
-    pillClass: "bg-orange-500 text-white",
-    icon: "📉",
+    badgeClass: "bg-warn-bg text-warn",
+    pillClass: "bg-warn text-white",
+    icon: "trend-down",
   },
   SAFE: {
     label: "Stok Masih Aman",
     shortLabel: "Aman",
-    badgeClass: "bg-emerald-100 text-emerald-800 border border-emerald-300",
-    pillClass: "bg-emerald-600 text-white",
-    icon: "✅",
+    badgeClass: "bg-brand-100 text-brand-800",
+    pillClass: "bg-brand-600 text-white",
+    icon: "check-circle",
   },
   OVERSTOCK: {
     label: "Stok Menumpuk",
     shortLabel: "Menumpuk",
-    badgeClass: "bg-slate-100 text-slate-700 border border-slate-300",
-    pillClass: "bg-slate-500 text-white",
-    icon: "📦",
+    badgeClass: "bg-paper-3 text-ink-2",
+    pillClass: "bg-muted text-white",
+    icon: "package",
   },
 } as const;
-

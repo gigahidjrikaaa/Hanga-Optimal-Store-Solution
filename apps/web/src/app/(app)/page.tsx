@@ -1,10 +1,13 @@
 /**
  * Beranda (Briefing) — Screen 4 in design_system.md §3.
  *
- * The daily briefing screen: headline, ScenarioToggle, RiskBanner,
- * RecommendationCards, MoverList, baseline footnote.
+ * The daily briefing screen: headline, InventoryHealthBar, ScenarioToggle,
+ * CashBudgetBar (the signature), RiskBanner, RecommendationCards, MoverList,
+ * baseline footnote.
  *
  * This is the core product screen Bu Sari reads every morning in 30 seconds.
+ * Motion is state-only (design.md §Motion): no entrance staggering, the
+ * loading skeleton and the app shell's page-enter carry the settle.
  */
 
 "use client";
@@ -12,6 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { HangaLogo } from "@/components/hanga-logo";
+import { Icon } from "@/components/icons";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ScenarioToggle } from "@/components/scenario-toggle";
 import { CashBudgetBar } from "@/components/cash-budget-bar";
@@ -29,6 +33,19 @@ import type { ActionType, DailyBriefing, InventoryOverview, Scenario } from "@/t
 
 // Spec §4 card ordering (client-side enforced).
 const CARD_ORDER: ActionType[] = ["REORDER", "PROMO", "HOLD", "SKIP"];
+
+/**
+ * Bersihkan emoji dan taut panah dari string terjemahan pada batas render
+ * (design.md §2: ikon digambar oleh icons.tsx, bukan emoji; §9: tanpa em/en
+ * dash pada salinan, ganti dengan koma).
+ */
+function cleanCopy(value: string): string {
+  return value
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu, "")
+    .replace(/\s*[—–]\s*/g, ", ")
+    .replace(/\s*→\s*/g, " ")
+    .trim();
+}
 
 export default function BerandaPage() {
   const { t, localizeBriefing } = useLanguage();
@@ -108,29 +125,28 @@ export default function BerandaPage() {
     <AppShell>
       <div className="flex flex-col gap-4 py-4">
         {/* Top Branding & Greeting Bar */}
-        <div className="px-4 flex items-center justify-between border-b border-border/60 pb-3 gap-2">
+        <div className="px-4 flex items-center justify-between border-b border-border pb-3 gap-2">
           <HangaLogo variant="full" size="sm" />
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             <button
               type="button"
               onClick={() => setTourOpen(true)}
-              title={t.tutorial.helpBtnTooltip}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface border border-border text-ink-700 hover:bg-canvas text-caption font-semibold shrink-0 transition-colors shadow-xs"
+              title={cleanCopy(t.tutorial.helpBtnTooltip)}
+              className="touch-target flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface border border-border text-ink-2 text-caption pressable shrink-0"
             >
-              <span>💡</span>
+              <Icon name="lightbulb" size={14} className="shrink-0" />
               <span className="hidden sm:inline">{t.tutorial.helpBtnLabel}</span>
             </button>
             <LanguageSwitcher variant="compact" />
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brand-100/70 text-brand-800 text-caption font-semibold shrink-0">
-              <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
-              <span>{t.common.activeStock}</span>
+            <div className="flex items-center px-2.5 py-1 rounded-full bg-brand-100 text-brand-800 text-caption shrink-0">
+              <span className="truncate">{t.common.activeStock}</span>
             </div>
           </div>
         </div>
 
         {/* Greeting & Headline */}
-        <div className="px-4">
-          <p className="text-caption text-ink-600">{t.briefing.greeting}</p>
+        <div className="px-4 min-w-0">
+          <p className="text-caption text-muted truncate">{cleanCopy(t.briefing.greeting)}</p>
           <h1 className="text-display text-ink-900 mt-1">
             {activeBriefing?.headline ?? t.briefing.defaultHeadline}
           </h1>
@@ -176,7 +192,7 @@ export default function BerandaPage() {
             <RiskBanner risks={activeBriefing.risks} />
 
             {/* Recommendation cards, spec §4 order: REORDER → PROMO → HOLD → SKIP.
-                Staggered rise-in (globals.css §9) — 70ms per card. */}
+                State-only motion: cards render settled, no entrance stagger. */}
             <div className="flex flex-col gap-3 px-4">
               {[...activeBriefing.recommendations]
                 .sort(
@@ -187,14 +203,13 @@ export default function BerandaPage() {
                   <div
                     key={`${rec.action}-${rec.sku}`}
                     id={index === 0 ? "tour-recommendation-card" : undefined}
-                    className="rise-in"
-                    style={{ animationDelay: `${120 + index * 70}ms` }}
                   >
                     <RecommendationCard
                       recommendation={rec}
                       scenario={activeBriefing.scenario}
                       onAsk={(question) => openAsk(question)}
                       waButtonId={index === 0 ? "tour-order-wa" : undefined}
+                      primary={index === 0}
                     />
                   </div>
                 ))}
@@ -205,10 +220,13 @@ export default function BerandaPage() {
               <button
                 type="button"
                 onClick={() => openAsk()}
-                className="touch-target w-full py-3 px-4 text-body font-semibold text-brand-800 bg-brand-100/70 border border-brand-600/40"
+                className="touch-target w-full py-3 px-4 text-body font-semibold text-brand-800 bg-surface border border-border pressable flex items-center justify-center gap-2"
                 style={{ borderRadius: "var(--radius-card)" }}
               >
-                {t.briefing.askHangaBtn}
+                <Icon name="message" size={20} className="shrink-0" />
+                <span className="text-balance text-left leading-snug">
+                  {cleanCopy(t.briefing.askHangaBtn)}
+                </span>
               </button>
             </div>
 
@@ -229,7 +247,7 @@ export default function BerandaPage() {
               activeBriefing.baseline_compare.deltas.waste_pct != null &&
               activeBriefing.baseline_compare.deltas.stockout_pct != null && (
                 <div className="px-4">
-                  <p className="text-caption text-ink-600">
+                  <p className="text-caption text-muted">
                     Dibandingkan kebijakan rata-rata 7 hari: buang{" "}
                     {activeBriefing.baseline_compare.deltas.waste_pct}%, habis stok{" "}
                     {activeBriefing.baseline_compare.deltas.stockout_pct}%
@@ -252,9 +270,11 @@ export default function BerandaPage() {
         {/* Empty state */}
         {!activeBriefing && !isLoading && (
           <div className="px-4 py-12 text-center">
-            <p className="text-4xl mb-4 float-soft">📊</p>
-            <h2 className="text-heading text-ink-900">Belum ada briefing</h2>
-            <p className="text-body text-ink-600 mt-2">
+            <div className="mx-auto w-fit rounded-full bg-paper-3 p-4 text-muted float-soft">
+              <Icon name="chart" size={32} className="shrink-0" />
+            </div>
+            <h2 className="text-heading text-ink-900 mt-4">Belum ada briefing</h2>
+            <p className="text-body text-muted mt-2">
               Foto buku catatan terlebih dahulu untuk mendapatkan rekomendasi
               harian.
             </p>

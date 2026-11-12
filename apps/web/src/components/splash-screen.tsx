@@ -34,7 +34,7 @@ export function SplashScreen({ fading = false }: SplashScreenProps) {
       />
       <div
         className="blob w-44 h-44 -right-10 bottom-32"
-        style={{ backgroundColor: "var(--color-warn-100)", animationDelay: "-8s" }}
+        style={{ backgroundColor: "var(--color-warn-bg)" }}
       />
       <div
         className="auth-sun w-36 h-36 left-1/2 -translate-x-1/2 bottom-[92px]"
@@ -52,7 +52,7 @@ export function SplashScreen({ fading = false }: SplashScreenProps) {
         <div
           className="h-1.5 sweep-bar w-full"
           style={{
-            borderRadius: "var(--radius-badge)",
+            borderRadius: "var(--radius-pill)",
             backgroundColor: "var(--color-brand-100)",
           }}
         />

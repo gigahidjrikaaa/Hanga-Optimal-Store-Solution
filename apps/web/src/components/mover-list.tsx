@@ -3,10 +3,12 @@
  *
  * Design: design_system.md §2 — MoverList ("product name + 7-day sparkline +
  * delta %"). The sparkline is generated deterministically from the delta
- * (direction + magnitude) with a stable per-SKU wiggle, and draws itself in
- * via the .sparkline-path stroke animation (globals.css §9). Rows stagger in.
+ * (direction + magnitude) with a stable per-SKU wiggle, and renders as a
+ * plain static polyline (design.md §Motion: no draw animation, stroke
+ * currentColor, 1.5, non-scaling stroke).
  */
 
+import { Icon } from "@/components/icons";
 import { formatDelta } from "@/lib/design-system";
 import type { Mover } from "@/types";
 
@@ -14,6 +16,16 @@ interface MoverListProps {
   title: string;
   movers: Mover[];
   type: "fast" | "slow";
+}
+
+/**
+ * Buang emoji dari judul terjemahan pada batas render (design.md §2: ikon
+ * digambar oleh icons.tsx, bukan emoji; ikon tren disisipkan di samping label).
+ */
+function cleanCopy(value: string): string {
+  return value
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu, "")
+    .trim();
 }
 
 const SPARK_W = 64;
@@ -41,9 +53,7 @@ function Sparkline({ delta, seed }: { delta: number; seed: string }) {
     ] as const;
   });
 
-  const path = points
-    .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`)
-    .join(" ");
+  const pointsAttr = points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
 
   return (
     <svg
@@ -52,16 +62,16 @@ function Sparkline({ delta, seed }: { delta: number; seed: string }) {
       viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
       aria-hidden="true"
       className="shrink-0"
+      style={{ color: rising ? "var(--color-brand-600)" : "var(--color-danger-600)" }}
     >
-      <path
-        d={path}
+      <polyline
+        points={pointsAttr}
         fill="none"
-        stroke={rising ? "var(--color-brand-600)" : "var(--color-danger-600)"}
-        strokeWidth={2}
+        stroke="currentColor"
+        strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="sparkline-path"
-        style={{ animationDelay: `${120}ms` }}
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );
@@ -72,21 +82,19 @@ export function MoverList({ title, movers, type }: MoverListProps) {
 
   return (
     <div className="px-4">
-      <h3 className="text-heading text-ink-900 mb-2">{title}</h3>
+      <h3 className="text-title text-ink-900 mb-2 flex items-center gap-2">
+        <Icon name={type === "fast" ? "trend-up" : "trend-down"} size={20} className="shrink-0 text-brand-800" />
+        <span className="min-w-0">{cleanCopy(title)}</span>
+      </h3>
       <ul
-        className="bg-surface divide-y divide-border"
-        style={{
-          borderRadius: "var(--radius-card)",
-          boxShadow: "var(--shadow-card)",
-        }}
+        className="bg-surface border border-border divide-y divide-border rounded-xl overflow-hidden"
       >
-        {movers.slice(0, 5).map((mover, index) => (
+        {movers.slice(0, 5).map((mover) => (
           <li
             key={mover.sku}
-            className="flex items-center justify-between gap-3 px-4 py-3 rise-in"
-            style={{ animationDelay: `${index * 60}ms` }}
+            className="flex items-center justify-between gap-3 px-4 py-3"
           >
-            <span className="text-body text-ink-900 truncate">{mover.name}</span>
+            <span className="text-body text-ink-900 truncate min-w-0">{mover.name}</span>
             <span className="flex items-center gap-3 shrink-0">
               <Sparkline delta={mover.delta_7d} seed={mover.sku} />
               <span

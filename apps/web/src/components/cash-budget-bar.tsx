@@ -1,15 +1,21 @@
 /**
- * CashBudgetBar — the cash-first advisor's input + fit display (v1.1).
+ * CashBudgetBar — the product's signature object (design.md §Motion, §6).
  *
- * Design: design_system.md §2. Two rows: "Kas hari ini" input (quick chips +
- * slider) and the fit row (Terpakai · Sisa + deferred mini-chips). Changing
- * cash re-fetches the briefing with `cash_available_idr`; the bundle is
- * re-fitted server-side in pure code (briefing_spec.md §6.1).
+ * The cash-first advisor's input + fit display (v1.1). Two rows: "Kas hari
+ * ini" input (quick chips + slider) and the fit row (Terpakai · Sisa + fit
+ * bar: brand fill on the paper-3 track) plus deferred mini-chips in warn
+ * tones. Changing cash re-fetches the briefing with `cash_available_idr`;
+ * the bundle is re-fitted server-side in pure code (briefing_spec.md §6.1).
+ *
+ * Surfaces: one card (bg-surface, hairline border, rounded-xl); wells and
+ * chips inside are paper-3 and borderless; the danger border appears only
+ * when the bundle overruns the cash. Numbers settle via useCountUp (§1).
  */
 
 "use client";
 
 import { formatIDR } from "@/lib/design-system";
+import { Icon } from "@/components/icons";
 import { useCountUp } from "@/lib/use-count-up";
 import { useLanguage } from "@/lib/i18n/context";
 import type { DailyBriefing } from "@/types";
@@ -36,8 +42,12 @@ function shortIDR(amount: number): string {
 }
 
 export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudgetBarProps) {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const budget = briefing.budget;
+  // Numbers settle instead of jumping when the bundle re-fits (§1 Numeric).
+  // Hooks stay above any early return.
+  const committed = useCountUp(budget?.committed_idr ?? 0);
+  const remaining = useCountUp(budget?.remaining_idr ?? 0);
   if (!budget) return null;
 
   const effectiveCash = cash ?? budget.cash_available_idr;
@@ -45,9 +55,6 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
     ? Math.min(100, Math.round((budget.committed_idr / budget.cash_available_idr) * 100))
     : 0;
   const overCash = budget.remaining_idr < 0;
-  // Numbers settle instead of jumping when the bundle re-fits (§1 Numeric).
-  const committed = useCountUp(budget.committed_idr);
-  const remaining = useCountUp(budget.remaining_idr);
 
   const names = new Map<string, string>();
   for (const rec of briefing.recommendations) {
@@ -57,21 +64,19 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
   return (
     <div className="px-4">
       <div
-        className={`p-3 flex flex-col gap-2 border ${
-          overCash ? "border-danger-600/40" : "border-brand-600/20"
-        }`}
+        className="p-4 flex flex-col gap-3 bg-surface border rounded-xl"
         style={{
-          borderRadius: "var(--radius-card)",
-          backgroundColor: overCash ? "var(--color-danger-100)" : "var(--color-brand-100)",
+          borderColor: overCash ? "var(--color-danger)" : "var(--color-border)",
           opacity: disabled ? 0.6 : 1,
-          transition: "opacity var(--duration-fast) var(--ease-out)",
+          transition: "opacity var(--dur-short) var(--ease-out)",
         }}
       >
         {/* Input row: cash chips + slider */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-brand-900">
-              {language === "id" ? "💵 Kas hari ini" : "💵 Purchasing Cash"}
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Icon name="banknote" size={18} className="shrink-0 text-brand-800" />
+            <span className="text-heading text-ink-900 truncate">
+              {language === "id" ? "Kas hari ini" : "Purchasing Cash"}
             </span>
             <span
               title={
@@ -79,20 +84,23 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
                   ? "Uang tunai di kasir yang siap dibelanjakan untuk stok hari ini"
                   : "Available cash on hand allocated for inventory restock today"
               }
-              className="text-xs text-brand-700 bg-brand-200/80 rounded-full px-2 py-0.5 cursor-help font-bold"
+              className="text-caption text-muted bg-paper-3 rounded-full px-2 py-0.5 cursor-help shrink-0"
             >
               ?
             </span>
           </div>
-          <span className="text-numeric text-base font-extrabold text-ink-900">
+          <span className="text-numeric text-lg font-semibold text-ink-900 shrink-0">
             {formatIDR(effectiveCash)}
           </span>
         </div>
 
-        <p className="text-xs text-ink-700 font-medium">
-          {language === "id"
-            ? "💡 Geser slider atau ketuk nominal untuk menyesuaikan belanjaan dengan modal Anda:"
-            : "💡 Adjust the slider or tap chips to fit reorders within your available cash:"}
+        <p className="text-caption text-muted flex items-start gap-1.5">
+          <Icon name="lightbulb" size={14} className="shrink-0" />
+          <span>
+            {language === "id"
+              ? "Geser slider atau ketuk nominal untuk menyesuaikan belanjaan dengan modal Anda:"
+              : "Adjust the slider or tap chips to fit reorders within your available cash:"}
+          </span>
         </p>
 
         <div className="flex flex-wrap gap-2" role="group" aria-label="Kas cepat pilih">
@@ -106,14 +114,18 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
                 onClick={() => onChange(chip)}
                 aria-pressed={isActive}
                 title={`${language === "id" ? "Pilih nominal kas" : "Select cash amount"} ${formatIDR(chip)}`}
-                className={`min-h-[42px] text-sm px-3.5 py-1.5 font-bold border pressable disabled:opacity-50 touch-target ${
-                  isActive
-                    ? "bg-brand-600 text-surface border-brand-600 shadow-sm"
-                    : "bg-surface text-ink-900 border-border hover:border-brand-600/40"
-                }`}
+                className="touch-target text-sm font-semibold px-3.5 py-1.5 pressable disabled:opacity-50"
                 style={{
                   borderRadius: "var(--radius-chip)",
-                  transitionDuration: "var(--duration-fast)",
+                  ...(isActive
+                    ? {
+                        backgroundColor: "var(--color-brand-600)",
+                        color: "var(--color-accent-ink)",
+                      }
+                    : {
+                        backgroundColor: "var(--color-paper-3)",
+                        color: "var(--color-ink-900)",
+                      }),
                 }}
               >
                 {shortIDR(chip)}
@@ -135,7 +147,7 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
             title={language === "id" ? "Geser untuk menyesuaikan modal kasir" : "Drag to adjust working cash"}
             className="w-full accent-brand-600 disabled:opacity-50 cursor-pointer h-2.5"
           />
-          <div className="flex justify-between text-xs text-ink-700 font-semibold">
+          <div className="flex justify-between text-caption text-muted">
             <span>{shortIDR(SLIDER_MIN)}</span>
             <span>Rp 1,5jt</span>
             <span>{shortIDR(SLIDER_MAX)}</span>
@@ -143,14 +155,14 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
         </div>
 
         {/* Fit row */}
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-numeric text-sm text-ink-700">
+        <div className="flex items-center justify-between gap-2 pt-1 min-w-0">
+          <span className="text-numeric text-sm text-muted min-w-0 truncate">
             {language === "id" ? "Terpakai: " : "Committed: "}
-            <strong className="text-ink-900 font-bold">{formatIDR(committed)}</strong>
+            <span className="text-ink-900 font-semibold">{formatIDR(committed)}</span>
           </span>
           <span
-            className={`text-numeric text-sm font-extrabold ${
-              overCash ? "text-danger-600" : "text-brand-800"
+            className={`text-numeric text-sm font-semibold shrink-0 ${
+              overCash ? "text-danger" : "text-brand-800"
             }`}
           >
             {language === "id" ? "Sisa Kas: " : "Remaining: "}
@@ -158,9 +170,9 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
           </span>
         </div>
 
+        {/* The signature fit bar: brand fill on the paper-3 track */}
         <div
-          className="h-2 w-full overflow-hidden"
-          style={{ backgroundColor: "var(--color-border)", borderRadius: "9999px" }}
+          className="h-2 w-full overflow-hidden bg-paper-3 rounded-full"
           role="progressbar"
           aria-valuenow={fitPct}
           aria-valuemin={0}
@@ -168,21 +180,21 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
           aria-label="Porsi kas terpakai"
         >
           <div
-            className="h-full"
+            className="h-full rounded-full"
             style={{
               width: `${fitPct}%`,
               backgroundColor: overCash
-                ? "var(--color-danger-600)"
+                ? "var(--color-danger-fill)"
                 : "var(--color-brand-600)",
-              transition: "width var(--duration-normal) var(--ease-out)",
+              transition: "width var(--dur-short) var(--ease-out)",
             }}
           />
         </div>
 
         {budget.deferred_skus.length > 0 && (
-          <div className="flex flex-col gap-1 pt-1 border-t border-border/50">
-            <span className="text-xs text-warn-700 font-semibold flex items-center gap-1">
-              <span>⏳</span>{" "}
+          <div className="flex flex-col gap-1.5 pt-2 border-t border-border">
+            <span className="text-caption text-warn flex items-center gap-1.5">
+              <Icon name="clock" size={14} className="shrink-0" />
               {language === "id"
                 ? "Ditunda ke jadwal besok (kas dihemat):"
                 : "Deferred to tomorrow (saving cash):"}
@@ -196,12 +208,7 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
                       ? "Pesanan ini ditunda ke esok hari agar uang kas mencukupi kebutuhan pokok prioritas"
                       : "Order deferred to tomorrow so cash remains sufficient for urgent staples"
                   }
-                  className="text-caption px-2 py-0.5 cursor-help font-medium"
-                  style={{
-                    borderRadius: "var(--radius-chip)",
-                    backgroundColor: "var(--color-warn-100)",
-                    color: "var(--color-warn-600)",
-                  }}
+                  className="text-caption px-2 py-0.5 cursor-help font-semibold bg-warn-bg text-warn rounded-lg"
                 >
                   {names.get(sku) ?? sku}
                 </span>
@@ -210,7 +217,7 @@ export function CashBudgetBar({ briefing, cash, onChange, disabled }: CashBudget
           </div>
         )}
 
-        <p className="text-caption text-ink-600 mt-0.5">{budget.note_bahasa}</p>
+        <p className="text-caption text-muted">{budget.note_bahasa}</p>
       </div>
     </div>
   );

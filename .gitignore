@@ -118,3 +118,6 @@ pids/
 *.tmp
 *.temp
 .cache/
+
+# Hallmark redesign working files
+.hallmark/

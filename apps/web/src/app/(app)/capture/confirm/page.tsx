@@ -11,10 +11,31 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { Icon } from "@/components/icons";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { DEMO_SHOP_ID } from "@/lib/constants";
 import { useLanguage } from "@/lib/i18n/context";
 import type { ExtractedLine } from "@/types";
+
+// Copy arrives verbatim from translations.ts (not editable here); emoji and
+// glued arrows are stripped at render and the matching <Icon> is placed
+// beside the label instead (design.md: icons are stroke SVGs, never emoji).
+const COPY_NOISE = /[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{FE0F}\u{200D}]/gu;
+
+function cleanCopy(s: string): string {
+  return s.replace(COPY_NOISE, "").replace(/\s{2,}/g, " ").trim();
+}
+
+// Sentence case for table column heads (design.md tables) and tutorial-style
+// step labels; keeps a leading "1. " ordinal if present.
+function sentenceCase(s: string): string {
+  const clean = cleanCopy(s);
+  const m = clean.match(/^(\d+\.\s*)(.*)$/);
+  if (m) {
+    return m[1] + m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase();
+  }
+  return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+}
 
 // Fallback extracted lines for demonstration
 const PLACEHOLDER_LINES: ExtractedLine[] = [
@@ -88,27 +109,27 @@ export default function ConfirmSheetPage() {
         <div className="px-4 flex items-start justify-between gap-3">
           <div>
             <h1 className="text-title text-ink-900">{t.capture.confirmTitle}</h1>
-            <p className="text-body text-ink-600 mt-1">
+            <p className="text-body text-muted mt-1">
               {t.capture.confirmSubtitle}
             </p>
           </div>
           <LanguageSwitcher variant="compact" />
         </div>
 
-        {/* Editable table */}
-        <div className="px-4">
-          <div
-            className="bg-surface overflow-hidden"
-            style={{
-              borderRadius: "var(--radius-card)",
-              boxShadow: "var(--shadow-card)",
-            }}
-          >
-            {/* Table header */}
-            <div className="grid grid-cols-[1fr_80px_80px] gap-2 px-4 py-3 border-b border-border">
-              <span className="text-caption text-ink-600 font-semibold">{t.capture.colName}</span>
-              <span className="text-caption text-ink-600 font-semibold text-right">{t.capture.colQty}</span>
-              <span className="text-caption text-ink-600 font-semibold text-right">{t.capture.colUnit}</span>
+        {/* Editable table — hairline row rules on bg-surface, no card chrome */}
+        <div className="px-4 flex flex-col gap-3">
+          <div className="bg-surface flex flex-col">
+            {/* Column heads — sentence case, never wrap */}
+            <div className="grid grid-cols-[1fr_80px_80px] gap-2 px-3 py-3 border-b border-border">
+              <span className="text-caption text-muted whitespace-nowrap">
+                {sentenceCase(t.capture.colName)}
+              </span>
+              <span className="text-caption text-muted whitespace-nowrap text-right">
+                {sentenceCase(t.capture.colQty)}
+              </span>
+              <span className="text-caption text-muted whitespace-nowrap text-right">
+                {sentenceCase(t.capture.colUnit)}
+              </span>
             </div>
 
             {/* Rows */}
@@ -117,12 +138,9 @@ export default function ConfirmSheetPage() {
               return (
                 <div
                   key={index}
-                  className="grid grid-cols-[1fr_80px_80px] gap-2 px-4 py-3 border-b border-border last:border-b-0 items-center"
-                  style={{
-                    backgroundColor: isLowConfidence
-                      ? "var(--color-warn-100)"
-                      : undefined,
-                  }}
+                  className={`grid grid-cols-[1fr_80px_80px] gap-2 px-3 py-2.5 border-b border-border last:border-b-0 items-center ${
+                    isLowConfidence ? "bg-warn-bg" : ""
+                  }`}
                 >
                   <input
                     type="text"
@@ -130,15 +148,16 @@ export default function ConfirmSheetPage() {
                     onChange={(e) =>
                       handleLineChange(index, "name", e.target.value)
                     }
-                    className="text-body bg-transparent text-ink-900 border-none focus:outline-none w-full"
+                    className="h-10 w-full rounded-lg border border-muted bg-transparent px-2.5 text-body text-ink-900"
                   />
                   <input
                     type="number"
+                    inputMode="numeric"
                     value={line.qty}
                     onChange={(e) =>
                       handleLineChange(index, "qty", parseFloat(e.target.value) || 0)
                     }
-                    className="text-body text-numeric bg-transparent text-ink-900 border-none focus:outline-none text-right w-full"
+                    className="h-10 w-full rounded-lg border border-muted bg-transparent px-2.5 text-body text-numeric text-right text-ink-900"
                   />
                   <input
                     type="text"
@@ -146,7 +165,7 @@ export default function ConfirmSheetPage() {
                     onChange={(e) =>
                       handleLineChange(index, "unit", e.target.value)
                     }
-                    className="text-body bg-transparent text-ink-600 border-none focus:outline-none text-right w-full"
+                    className="h-10 w-full rounded-lg border border-muted bg-transparent px-2.5 text-body text-right text-ink-2"
                   />
                 </div>
               );
@@ -154,24 +173,28 @@ export default function ConfirmSheetPage() {
           </div>
 
           {/* Low confidence hint */}
-          <p className="text-caption text-warn-600 mt-2">
-            {t.capture.yellowWarning}
+          <p className="self-start inline-flex items-start gap-2 rounded-lg bg-warn-bg text-warn px-3 py-2 text-body">
+            <Icon name="alert-circle" size={18} className="shrink-0" />
+            <span>{cleanCopy(t.capture.yellowWarning)}</span>
           </p>
         </div>
 
-        {/* Sticky confirm button */}
+        {/* Sticky confirm button — the screen's one filled primary */}
         <div className="px-4 pb-4 mt-4">
           <button
             onClick={handleConfirm}
             disabled={isSubmitting}
-            className="touch-target w-full text-body font-semibold py-4 text-surface transition-colors disabled:opacity-50"
+            className="touch-target pressable w-full flex items-center justify-center gap-2 text-body font-semibold py-4 transition-colors disabled:opacity-50"
             style={{
               borderRadius: "var(--radius-card)",
               backgroundColor: "var(--color-brand-600)",
-              transitionDuration: "var(--duration-fast)",
+              color: "var(--color-accent-ink)",
             }}
           >
-            {isSubmitting ? t.capture.savingBtn : t.capture.confirmBtn}
+            <Icon name="check" size={18} className="shrink-0" />
+            <span>
+              {isSubmitting ? t.capture.savingBtn : cleanCopy(t.capture.confirmBtn)}
+            </span>
           </button>
         </div>
       </div>

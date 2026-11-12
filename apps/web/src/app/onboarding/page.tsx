@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { HangaLogo } from "@/components/hanga-logo";
+import { Icon } from "@/components/icons";
 import { api } from "@/lib/api";
 import { DEMO_SHOP_ID } from "@/lib/constants";
 import { useAuth } from "@/lib/auth-context";
@@ -136,127 +137,115 @@ export default function OnboardingPage() {
     step.type === "cash" || answers[currentStep].trim().length > 0;
 
   return (
-    <div className="flex flex-1 flex-col mx-auto w-full max-w-[480px] min-h-dvh">
-      {/* Progress bar */}
-      <div
-        className="h-1 w-full"
-        style={{ backgroundColor: "var(--color-brand-100)" }}
-      >
-        <div
-          className="h-full transition-all"
-          style={{
-            width: `${progress}%`,
-            backgroundColor: "var(--color-brand-600)",
-            transitionDuration: "var(--duration-normal)",
-          }}
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-8 gap-8">
+    <div
+      className="flex flex-1 flex-col mx-auto w-full max-w-[480px] min-h-dvh"
+      style={{ animation: "page-enter 260ms var(--ease-out) both" }}
+    >
+      <div className="flex flex-1 flex-col px-6 pb-8 pt-6">
         {/* Brand header */}
         <div className="flex items-center justify-between">
           <HangaLogo variant="full" size="sm" />
-          <span className="text-caption text-ink-600 font-medium">
+          <span className="text-caption text-ink-2">
             Langkah {currentStep + 1} dari {ONBOARDING_STEPS.length}
           </span>
         </div>
 
-        {/* Question */}
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-display text-ink-900">{step.question}</h1>
-          {step.hint && (
-            <p className="text-caption text-ink-600 flex items-center gap-1.5">
-              <span>💡</span>
-              <span>{step.hint}</span>
-            </p>
-          )}
+        {/* Progress bar */}
+        <div className="mt-3 h-1.5 w-full rounded-full bg-paper-3">
+          <div
+            className="h-full rounded-full bg-brand-600"
+            style={{ width: `${progress}%` }}
+          />
         </div>
 
-        {/* Input */}
-        {step.type === "cash" ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-2">
-              {CASH_CHIPS.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  onClick={() => handleChange(String(chip))}
-                  title={`Pilih cepat modal Rp ${chip.toLocaleString("id-ID")}`}
-                  className={`touch-target px-4 text-body font-semibold border transition-colors ${
-                    answers[currentStep] === String(chip)
-                      ? "bg-brand-600 border-brand-600 text-surface"
-                      : "bg-surface border-border text-ink-600"
-                  }`}
-                  style={{ borderRadius: "var(--radius-badge)" }}
-                >
-                  {shortIDR(chip)}
-                </button>
-              ))}
+        {/* Question and answer, centred in the space under the header */}
+        <div className="flex flex-1 flex-col justify-center gap-6 py-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-display text-ink-900">{step.question}</h1>
+            {step.hint && (
+              <p className="text-caption text-muted flex items-start gap-1.5">
+                <Icon name="lightbulb" size={14} className="shrink-0" />
+                <span>{step.hint}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Input */}
+          {step.type === "cash" ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap gap-2">
+                {CASH_CHIPS.map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => handleChange(String(chip))}
+                    title={`Pilih cepat modal Rp ${chip.toLocaleString("id-ID")}`}
+                    className={`touch-target px-4 text-body font-semibold border rounded-lg ${
+                      answers[currentStep] === String(chip)
+                        ? "bg-brand-600 border-brand-600 text-white"
+                        : "bg-surface border-border text-muted"
+                    }`}
+                  >
+                    {shortIDR(chip)}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                value={answers[currentStep]}
+                onChange={(e) => handleChange(e.target.value)}
+                placeholder={step.placeholder}
+                className="text-title py-3 px-4 bg-surface border border-muted text-ink-900 text-numeric placeholder:text-neutral-400 rounded-xl"
+                autoFocus
+              />
+              <p className="text-caption text-muted">
+                Dipakai Hanga agar rekomendasi tidak melebihi kas hari ini. Bisa
+                diubah kapan saja di Beranda.
+              </p>
             </div>
+          ) : (
             <input
-              type="number"
-              inputMode="numeric"
-              min={0}
+              type="text"
               value={answers[currentStep]}
               onChange={(e) => handleChange(e.target.value)}
               placeholder={step.placeholder}
-              className="text-title py-3 px-4 bg-surface border border-border text-ink-900 text-numeric placeholder:text-neutral-400 focus:outline-none focus:border-brand-600 transition-colors"
-              style={{
-                borderRadius: "var(--radius-card)",
-                transitionDuration: "var(--duration-fast)",
-              }}
+              className="text-title py-3 px-4 bg-surface border border-muted text-ink-900 placeholder:text-neutral-400 rounded-xl"
               autoFocus
             />
-            <p className="text-caption text-ink-600">
-              Dipakai Hanga agar rekomendasi tidak melebihi kas hari ini. Bisa
-              diubah kapan saja di Beranda.
-            </p>
-          </div>
-        ) : (
-          <input
-            type="text"
-            value={answers[currentStep]}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={step.placeholder}
-            className="text-title py-3 px-4 bg-surface border border-border text-ink-900 placeholder:text-neutral-400 focus:outline-none focus:border-brand-600 transition-colors"
-            style={{
-              borderRadius: "var(--radius-card)",
-              transitionDuration: "var(--duration-fast)",
-            }}
-            autoFocus
-          />
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* Bottom navigation */}
-      <div className="px-6 pb-8 flex gap-3">
-        {currentStep > 0 && (
+        {/* Bottom navigation */}
+        <div className="flex gap-3">
+          {currentStep > 0 && (
+            <button
+              onClick={handleBack}
+              title="Kembali ke pertanyaan sebelumnya"
+              className="touch-target text-body font-semibold py-3 px-6 border border-border text-ink-2 rounded-xl pressable"
+            >
+              Kembali
+            </button>
+          )}
           <button
-            onClick={handleBack}
-            title="Kembali ke pertanyaan sebelumnya"
-            className="touch-target text-body font-semibold py-3 px-6 border border-border text-ink-600 transition-colors"
-            style={{
-              borderRadius: "var(--radius-card)",
-              transitionDuration: "var(--duration-fast)",
-            }}
+            onClick={handleNext}
+            disabled={!canProceed || isSaving}
+            title={isLastStep ? "Simpan profil dan buka beranda toko" : "Lanjut ke langkah berikutnya"}
+            className="touch-target flex-1 h-12 flex items-center justify-center gap-2 text-lg font-extrabold text-white bg-brand-600 rounded-xl pressable disabled:bg-paper-3 disabled:text-muted disabled:font-semibold disabled:border disabled:border-border disabled:cursor-not-allowed"
           >
-            Kembali
+            {isSaving ? (
+              "Menyimpan…"
+            ) : isLastStep ? (
+              <>
+                <Icon name="play" size={16} className="shrink-0" />
+                Mulai Pakai Hanga
+              </>
+            ) : (
+              "Lanjut"
+            )}
           </button>
-        )}
-        <button
-          onClick={handleNext}
-          disabled={!canProceed || isSaving}
-          title={isLastStep ? "Simpan profil dan buka beranda toko" : "Lanjut ke langkah berikutnya"}
-          className="touch-target flex-1 text-body font-semibold py-3 px-6 text-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed pressable"
-          style={{
-            borderRadius: "var(--radius-card)",
-            backgroundColor: "var(--color-brand-600)",
-            transitionDuration: "var(--duration-fast)",
-          }}
-        >
-          {isSaving ? "Menyimpan…" : isLastStep ? "Mulai Pakai Hanga ✨" : "Lanjut"}
-        </button>
+        </div>
       </div>
     </div>
   );

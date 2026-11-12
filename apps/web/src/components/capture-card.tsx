@@ -7,7 +7,29 @@
 
 "use client";
 
+import { Icon } from "@/components/icons";
 import { useLanguage } from "@/lib/i18n/context";
+
+// Copy arrives verbatim from translations.ts (not editable here); emoji and
+// glued arrows are stripped at render and the matching <Icon> is placed
+// beside the label instead (design.md: icons are stroke SVGs, never emoji).
+const COPY_NOISE = /[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{FE0F}\u{200D}]/gu;
+
+function cleanCopy(s: string): string {
+  return s.replace(COPY_NOISE, "").replace(/\s{2,}/g, " ").trim();
+}
+
+const PHOTO_TIPS_ID = [
+  "Pastikan nama barang dan angka penjualan jelas",
+  "Arahkan kamera tegak lurus dari atas kertas",
+  "Pencahayaan terang dan hindari bayangan tangan",
+];
+
+const PHOTO_TIPS_EN = [
+  "Ensure item names and sale numbers are clear",
+  "Hold camera perpendicular directly above paper",
+  "Bright lighting, avoid cast shadows",
+];
 
 interface CaptureCardProps {
   onCapture: (file: File) => void;
@@ -32,66 +54,57 @@ export function CaptureCard({ onCapture, isUploading = false }: CaptureCardProps
         boxShadow: "var(--shadow-card)",
       }}
     >
+      {/* Camera well — brand-100 circle, camera icon in brand-800 */}
       <div
-        className={`w-16 h-16 flex items-center justify-center text-4xl rounded-full ${
+        className={`w-16 h-16 flex items-center justify-center rounded-full bg-brand-100 ${
           isUploading ? "scanning" : ""
         }`}
-        style={{ backgroundColor: "var(--color-brand-100)" }}
       >
-        📷
+        <Icon name="camera" size={28} className="shrink-0 text-brand-800" />
       </div>
 
       <div>
         <h3 className="text-heading text-ink-900">{t.capture.cardTitle}</h3>
-        <p className="text-body text-ink-600 mt-1">
+        <p className="text-body text-muted mt-1">
           {t.capture.cardSubtitle}
         </p>
       </div>
 
-      <div className="p-3 bg-canvas border border-border/80 rounded-lg text-caption text-ink-600 text-left flex flex-col gap-1 w-full max-w-xs">
-        <span className="font-semibold text-ink-900 flex items-center gap-1 text-xs">
-          <span>💡</span> {language === "id" ? "Tips foto catatan penjualan:" : "Ledger capture tips:"}
+      {/* Photo tips — paper-3 well, lightbulb icon + text-body items */}
+      <div className="bg-paper-3 p-3 rounded-lg text-left flex flex-col gap-1.5 w-full max-w-xs">
+        <span className="text-caption text-ink-900 flex items-center gap-1.5">
+          <Icon name="lightbulb" size={16} className="shrink-0 text-brand-800" />
+          {language === "id" ? "Tips foto catatan penjualan:" : "Ledger capture tips:"}
         </span>
-        <ul className="list-disc list-inside text-[11px] space-y-0.5 text-ink-600">
-          {language === "id" ? (
-            <>
-              <li>Pastikan nama barang dan angka penjualan jelas</li>
-              <li>Arahkan kamera tegak lurus dari atas kertas</li>
-              <li>Pencahayaan terang dan hindari bayangan tangan</li>
-            </>
-          ) : (
-            <>
-              <li>Ensure item names and sale numbers are clear</li>
-              <li>Hold camera perpendicular directly above paper</li>
-              <li>Bright lighting, avoid cast shadows</li>
-            </>
-          )}
+        <ul className="flex flex-col gap-1">
+          {(language === "id" ? PHOTO_TIPS_ID : PHOTO_TIPS_EN).map((tip, idx) => (
+            <li key={idx} className="text-body text-muted flex items-start gap-1.5">
+              <Icon name="check" size={14} className="shrink-0 text-brand-800 mt-[3px]" />
+              <span>{tip}</span>
+            </li>
+          ))}
         </ul>
       </div>
 
       {isUploading ? (
-        <div className="w-full rise-in">
+        <div className="w-full flex flex-col gap-2">
           <div
-            className="h-2 sweep-bar w-full"
-            style={{
-              borderRadius: "var(--radius-badge)",
-              backgroundColor: "var(--color-brand-100)",
-            }}
+            className="h-2 sweep-bar w-full rounded-full bg-brand-100"
             role="progressbar"
             aria-label="Mengunggah foto"
           />
-          <p className="text-caption text-ink-600 mt-2 text-center">
-            {t.capture.uploading}
+          <p className="text-caption text-muted text-center">
+            {cleanCopy(t.capture.uploading)}
           </p>
         </div>
       ) : (
         <label
           title={language === "id" ? "Buka kamera atau pilih foto buku catatan" : "Open camera or upload notebook photo"}
-          className="touch-target text-body font-semibold py-3 px-6 text-surface cursor-pointer pressable shadow-sm"
+          className="touch-target pressable text-body font-semibold py-3 px-6 cursor-pointer"
           style={{
             borderRadius: "var(--radius-card)",
             backgroundColor: "var(--color-brand-600)",
-            transitionDuration: "var(--duration-fast)",
+            color: "var(--color-accent-ink)",
           }}
         >
           {t.capture.takePhotoBtn}

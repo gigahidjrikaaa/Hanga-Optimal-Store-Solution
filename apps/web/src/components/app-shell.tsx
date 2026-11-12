@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_TABS } from "@/lib/design-system";
+import { Icon } from "@/components/icons";
 import { useLanguage } from "@/lib/i18n/context";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -24,10 +25,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Bottom navigation */}
       <nav
         id="tour-bottom-nav"
-        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-surface border-t border-border"
+        aria-label="Navigasi utama"
+        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-surface"
         style={{ boxShadow: "var(--shadow-sheet)" }}
       >
-        <ul className="flex justify-around py-2">
+        <ul className="flex justify-around py-1">
           {NAV_TABS.map((tab) => {
             const isActive = pathname === tab.href;
             const translatedLabel =
@@ -46,18 +48,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   href={tab.href}
                   title={`Menu ${translatedLabel}`}
-                  className={`touch-target flex flex-col items-center gap-1 px-3 transition-colors`}
-                  style={{
-                    color: isActive
-                      ? "var(--color-brand-600)"
-                      : "var(--color-ink-600)",
-                    transitionDuration: "var(--duration-fast)",
-                  }}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`touch-target pressable flex-col gap-0.5 px-3 py-1.5 rounded-xl ${
+                    isActive ? "text-brand-600" : "text-muted"
+                  }`}
                 >
-                  <span className="text-xl" role="img" aria-hidden="true">
-                    {tab.icon}
+                  <Icon name={tab.icon} size={22} />
+                  <span className="text-[11px] font-semibold leading-none">
+                    {translatedLabel}
                   </span>
-                  <span className="text-caption font-semibold">{translatedLabel}</span>
                 </Link>
               </li>
             );

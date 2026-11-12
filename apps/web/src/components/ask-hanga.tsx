@@ -5,6 +5,10 @@
  * read aloud via speechSynthesis — zero live-API dependency on stage. A text
  * fallback is ALWAYS visible (venue-noise insurance). Answers come from the
  * /ask endpoint, grounded strictly in the stored briefing.
+ *
+ * Icons come from icons.tsx beside text labels (never icon-only); motion is
+ * state-only: the listening halo is the .scanning load state, the thinking
+ * state is the skeleton shimmer.
  */
 
 "use client";
@@ -12,6 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { DEMO_DATE, DEMO_SHOP_ID } from "@/lib/constants";
+import { Icon } from "@/components/icons";
 import { FACTOR_CONFIG } from "@/lib/design-system";
 import { useLanguage } from "@/lib/i18n/context";
 import type { AskResponse, FactorKey } from "@/types";
@@ -36,7 +41,7 @@ interface SpeechRecognitionLike {
 interface AskSheetProps {
   open: boolean;
   onClose: () => void;
-  /** Prefilled question (e.g. from a card's 🎤 chip). */
+  /** Prefilled question (e.g. from a card's mic chip). */
   seedQuestion?: string;
   scenario: string;
   /** Current cash so budget answers match what the owner sees. */
@@ -119,7 +124,7 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
     };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) {
-      setError("Suara belum didukung di peramban ini — ketik saja ya, Bu.");
+      setError("Suara belum didukung di peramban ini, ketik saja ya, Bu.");
       setState("error");
       return;
     }
@@ -134,7 +139,7 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
       void ask(transcript);
     };
     recognition.onerror = () => {
-      setError("Tidak bisa mendengar dengan jelas — ketik saja ya, Bu.");
+      setError("Tidak bisa mendengar dengan jelas, ketik saja ya, Bu.");
       setState("error");
     };
     recognition.onend = () => setState((s) => (s === "listening" ? "idle" : s));
@@ -154,7 +159,8 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         type="button"
         aria-label="Tutup"
         onClick={onClose}
-        className="absolute inset-0 bg-ink-900/40"
+        className="absolute inset-0"
+        style={{ backgroundColor: "color-mix(in srgb, var(--color-ink) 40%, transparent)" }}
       />
 
       <div
@@ -165,9 +171,12 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         }}
       >
         {/* Sheet header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-heading text-ink-900">🎤 Tanya Hanga</h2>
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <h2 className="text-heading text-ink-900 flex items-center gap-2 min-w-0">
+            <Icon name="message" size={20} className="shrink-0 text-brand-800" />
+            <span className="truncate">Tanya Hanga</span>
+          </h2>
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -178,17 +187,23 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
               }}
               aria-pressed={muted}
               aria-label={muted ? "Aktifkan suara" : "Bisukan suara"}
-              className="touch-target text-caption text-ink-600"
+              className="touch-target text-caption text-ink-2 bg-paper-3 rounded-lg pressable"
             >
-              {muted ? "🔇" : "🔊"}
+              <span className="flex items-center gap-1 px-1.5">
+                <Icon name={muted ? "eye-off" : "eye"} size={16} className="shrink-0" />
+                {muted ? "Senyap" : "Suara"}
+              </span>
             </button>
             <button
               type="button"
               onClick={onClose}
               aria-label="Tutup"
-              className="touch-target text-caption text-ink-600"
+              className="touch-target text-caption text-ink-2 bg-paper-3 rounded-lg pressable"
             >
-              ✕
+              <span className="flex items-center gap-1 px-1.5">
+                <Icon name="x" size={16} className="shrink-0" />
+                Tutup
+              </span>
             </button>
           </div>
         </div>
@@ -196,16 +211,10 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         {/* Listening / thinking / error states */}
         {state === "listening" && (
           <div className="flex flex-col items-center gap-2 py-4">
-            <div className="flex gap-1.5 items-end h-8" aria-hidden="true">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <span
-                  key={i}
-                  className="w-1.5 bg-brand-600 rounded-full animate-pulse"
-                  style={{ height: `${12 + (i % 3) * 10}px`, animationDelay: `${i * 120}ms` }}
-                />
-              ))}
+            <div className="w-14 h-14 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center scanning">
+              <Icon name="mic" size={26} className="shrink-0" />
             </div>
-            <p className="text-body text-ink-600">Hanga mendengarkan…</p>
+            <p className="text-body text-muted">Hanga mendengarkan…</p>
           </div>
         )}
         {busy && (
@@ -217,8 +226,7 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         {error && (
           <p
             role="alert"
-            className="text-caption px-3 py-2 text-warn-600"
-            style={{ backgroundColor: "var(--color-warn-100)", borderRadius: "var(--radius-chip)" }}
+            className="text-caption px-3 py-2 text-warn bg-warn-bg rounded-lg"
           >
             {error}
           </p>
@@ -227,7 +235,10 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         {/* Starter suggestion chips when idle & no question yet */}
         {!answer && state === "idle" && (
           <div className="flex flex-col gap-2 py-1">
-            <p className="text-xs text-ink-600 font-medium">💡 {t.askHanga.popularQuestions}</p>
+            <p className="text-caption text-muted flex items-center gap-1.5">
+              <Icon name="lightbulb" size={14} className="shrink-0" />
+              {t.askHanga.popularQuestions}
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {[
                 t.askHanga.sample1,
@@ -241,7 +252,7 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
                     setQuestion(starter);
                     void ask(starter);
                   }}
-                  className="text-caption px-2.5 py-1 bg-canvas hover:bg-neutral-100 border border-border text-ink-600 rounded-full transition-colors text-left"
+                  className="text-caption px-2.5 py-1.5 bg-paper-3 text-ink-2 rounded-full pressable text-left"
                 >
                   {starter}
                 </button>
@@ -253,8 +264,8 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
         {/* Answer */}
         {answer && state !== "listening" && (
           <div
-            className="p-3 flex flex-col gap-2 pop-in"
-            style={{ backgroundColor: "var(--color-brand-100)", borderRadius: "var(--radius-card)" }}
+            className="p-3 flex flex-col gap-2 bg-brand-100 rounded-xl"
+            style={{ borderRadius: "var(--radius-card)" }}
           >
             <p className="text-body text-ink-900">{answer.answer_bahasa}</p>
             {answer.factor_keys.length > 0 && (
@@ -278,8 +289,8 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
                   setQuestion(fu);
                   void ask(fu);
                 }}
-                className="text-caption px-2.5 py-1 bg-canvas border border-border text-ink-600"
-                style={{ borderRadius: "var(--radius-badge)" }}
+                className="text-caption px-2.5 py-1.5 bg-surface border border-border text-muted pressable"
+                style={{ borderRadius: "var(--radius-chip)" }}
               >
                 {fu}
               </button>
@@ -302,10 +313,13 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
               disabled={busy}
               aria-label={t.askHanga.voiceBtn}
               title={language === "id" ? "Tekan untuk bicara langsung via mikrofon" : "Tap to speak directly via microphone"}
-              className="touch-target text-xl bg-brand-100 text-brand-800 disabled:opacity-50 hover:bg-brand-200 transition-colors"
-              style={{ borderRadius: "var(--radius-badge)" }}
+              className="touch-target bg-brand-100 text-brand-800 disabled:opacity-50 pressable shrink-0"
+              style={{ borderRadius: "var(--radius-chip)" }}
             >
-              🎙️
+              <span className="flex items-center gap-1 px-2.5">
+                <Icon name="mic" size={18} className="shrink-0" />
+                <span className="text-caption font-semibold">{t.askHanga.voiceBtn}</span>
+              </span>
             </button>
             <input
               type="text"
@@ -313,23 +327,32 @@ export function AskSheet({ open, onClose, seedQuestion, scenario, cash }: AskShe
               onChange={(e) => setQuestion(e.target.value)}
               placeholder={t.askHanga.placeholder}
               aria-label={t.askHanga.title}
-              className="touch-target flex-1 px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
+              className="touch-target flex-1 min-w-0 px-3 text-body text-ink-900 bg-canvas border border-border"
               style={{ borderRadius: "var(--radius-chip)" }}
             />
             <button
               type="submit"
               disabled={busy || question.trim().length < 2}
               title={t.askHanga.sendBtn}
-              className="touch-target px-4 text-body font-semibold text-surface bg-brand-600 disabled:opacity-50 pressable"
-              style={{ borderRadius: "var(--radius-chip)" }}
+              className="touch-target px-4 py-2 text-body font-semibold bg-brand-600 disabled:opacity-50 pressable shrink-0"
+              style={{
+                borderRadius: "var(--radius-chip)",
+                color: "var(--color-accent-ink)",
+              }}
             >
-              {t.askHanga.sendBtn}
+              <span className="flex items-center gap-1.5">
+                <Icon name="send" size={16} className="shrink-0" />
+                {t.askHanga.sendBtn}
+              </span>
             </button>
           </form>
-          <p className="text-[11px] text-ink-600 text-center">
-            {language === "id"
-              ? "🎙️ Tekan mikrofon untuk bicara atau ketik pertanyaan langsung dalam Bahasa Indonesia"
-              : "🎙️ Tap the microphone to speak or type your question in English"}
+          <p className="text-caption text-muted text-center flex items-center justify-center gap-1.5">
+            <Icon name="mic" size={14} className="shrink-0" />
+            <span>
+              {language === "id"
+                ? "Tekan mikrofon untuk bicara atau ketik pertanyaan langsung dalam Bahasa Indonesia"
+                : "Tap the microphone to speak or type your question in English"}
+            </span>
           </p>
         </div>
       </div>
@@ -341,10 +364,11 @@ function FactorChipInline({ factorKey }: { factorKey: FactorKey }) {
   const config = FACTOR_CONFIG[factorKey];
   return (
     <span
-      className="text-caption px-2 py-0.5 bg-surface text-ink-600"
+      className="text-caption px-2 py-0.5 bg-surface text-ink-2 inline-flex items-center gap-1"
       style={{ borderRadius: "var(--radius-chip)" }}
     >
-      <span aria-hidden="true">{config.icon}</span> {config.label}
+      <Icon name={config.icon} size={14} className="shrink-0" />
+      {config.label}
     </span>
   );
 }

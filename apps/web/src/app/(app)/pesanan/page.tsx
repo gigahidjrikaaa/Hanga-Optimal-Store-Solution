@@ -4,6 +4,15 @@
  * Fetches persisted orders from the API (briefing_spec.md §6:
  * shops/{shopId}/orders/{id}); falls back to the offline demo list.
  * Tapping WhatsApp on a draft marks it SENT (optimistic + PUT).
+ *
+ * Design notes (Hallmark v2 redesign): the header count sits on its own
+ * full-width line and wraps cleanly at 390px (flex-wrap + min-w-0, no
+ * mid-word clip); order cards are bg-surface with a hairline border only (one of border
+ * or shadow); status pills are sentence-case caption chips on token
+ * pairs; exactly one filled primary CTA exists on the screen (the
+ * newest draft's "Kirim via WhatsApp"), every other CTA is secondary
+ * outlined; icons come from components/icons.tsx (never emoji); motion
+ * is state-only via .pressable.
  */
 
 "use client";
@@ -11,6 +20,7 @@
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { HangaLogo } from "@/components/hanga-logo";
+import { Icon } from "@/components/icons";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { api } from "@/lib/api";
 import { DEMO_SHOP_ID } from "@/lib/constants";
@@ -136,23 +146,33 @@ export default function PesananPage() {
       });
   };
 
+  // The single filled primary CTA belongs to the first draft in list order
+  // (design.md: one filled primary per screen; position, not timestamp, so
+  // two identical draft cards never read as inconsistently styled);
+  // every other CTA is secondary outlined.
+  const primaryDraftId = orders.find((o) => o.status === "DRAFTED")?.id ?? null;
+
   return (
     <AppShell>
       <div className="flex flex-col gap-5 py-5 px-4">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border/60 pb-3 gap-2">
+        {/* Header — the count gets its own full-width line so it never
+            clips mid-word at 390px (flex-wrap + min-w-0, no truncate) */}
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-border pb-3">
           <HangaLogo variant="compact" size="sm" />
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 justify-end">
             <LanguageSwitcher variant="compact" />
-            <span className="text-caption text-ink-600 font-medium shrink-0">
+          </div>
+          <p className="text-caption text-muted min-w-0 basis-full flex items-center gap-1.5">
+            <Icon name="clipboard" size={14} className="shrink-0" aria-hidden="true" />
+            <span className="min-w-0">
               {t.pesanan.summaryCount.replace("{count}", String(orders.length))}
             </span>
-          </div>
+          </p>
         </div>
 
         <div>
           <h1 className="text-title text-ink-900">{t.pesanan.title}</h1>
-          <p className="text-body text-ink-600 mt-1">
+          <p className="text-body text-muted mt-1">
             {t.pesanan.subtitle}
           </p>
         </div>
@@ -161,37 +181,34 @@ export default function PesananPage() {
         <div className="flex flex-col gap-3">
           {orders.map((order) => {
             const isDraft = order.status === "DRAFTED";
+            const isPrimaryCta = isDraft && order.id === primaryDraftId;
 
             return (
               <div
                 key={order.id}
-                className="bg-surface p-4 border border-border flex flex-col gap-3"
-                style={{
-                  borderRadius: "var(--radius-card)",
-                  boxShadow: "var(--shadow-card)",
-                }}
+                className="bg-surface border border-border rounded-xl p-4 flex flex-col gap-3"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-caption font-semibold text-ink-600">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-caption text-muted min-w-0">
                     {formatDate(order.created_at, language)}
                   </span>
                   <span
-                    className={`text-caption font-bold px-2.5 py-0.5 rounded-full ${
-                      isDraft ? "bg-warn-100 text-warn-600" : "bg-brand-100 text-brand-800"
+                    className={`text-caption px-2.5 py-0.5 rounded-full shrink-0 ${
+                      isDraft ? "bg-warn-bg text-warn" : "bg-brand-100 text-brand-800"
                     }`}
                   >
                     {isDraft
-                      ? (language === "id" ? "DRAF PESANAN" : "DRAFT ORDER")
-                      : (language === "id" ? "TERKIRIM" : "SENT VIA WA")}
+                      ? (language === "id" ? "Draf pesanan" : "Draft order")
+                      : (language === "id" ? "Terkirim" : "Sent via WA")}
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="text-heading text-ink-900 font-bold">
+                  <h3 className="text-heading text-ink-900">
                     {order.supplier_ref}
                   </h3>
-                  <p className="text-body text-ink-600 mt-0.5">{itemsLabel(order)}</p>
-                  <p className="text-numeric text-brand-600 font-bold mt-1">
+                  <p className="text-body text-muted mt-0.5">{itemsLabel(order)}</p>
+                  <p className="text-numeric text-lg font-semibold text-brand-800 mt-1">
                     {formatIDR(order.est_cost_idr)}
                   </p>
                 </div>
@@ -213,9 +230,13 @@ export default function PesananPage() {
                     onClick={() => {
                       if (isDraft) markAsSent(order.id);
                     }}
-                    className="touch-target flex-1 py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-caption text-center flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                    className={
+                      isPrimaryCta
+                        ? "pressable touch-target flex-1 py-2.5 px-3 rounded-lg bg-brand-600 text-white text-caption flex items-center justify-center gap-1.5"
+                        : "pressable touch-target flex-1 py-2.5 px-3 rounded-lg border border-border bg-surface hover:bg-canvas text-brand-800 text-caption flex items-center justify-center gap-1.5"
+                    }
                   >
-                    <span>💬</span>
+                    <Icon name="message" size={18} className="shrink-0" />
                     <span>
                       {isDraft
                         ? (language === "id" ? "Kirim via WhatsApp" : "Send via WhatsApp")

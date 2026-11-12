@@ -17,9 +17,34 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { Icon } from "@/components/icons";
 import { useLanguage } from "@/lib/i18n/context";
 
 export const TOUR_STORAGE_KEY = "hanga_tour_completed";
+
+// Copy arrives verbatim from translations.ts (not editable here); emoji and
+// glued arrows are stripped at render and the matching <Icon> is placed
+// beside the label instead (design.md: icons are stroke SVGs, never emoji).
+const COPY_NOISE = /[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{27BF}\u{FE0F}\u{200D}]/gu;
+
+function cleanCopy(s: string): string {
+  return s.replace(COPY_NOISE, "").replace(/\s{2,}/g, " ").trim();
+}
+
+// Sentence case for step labels (design.md: no uppercase/tracking on heads);
+// keeps a leading "1. " ordinal if present.
+function sentenceCase(s: string): string {
+  const clean = cleanCopy(s);
+  const m = clean.match(/^(\d+\.\s*)(.*)$/);
+  if (m) {
+    return m[1] + m[2].charAt(0).toUpperCase() + m[2].slice(1).toLowerCase();
+  }
+  return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+}
+
+// Solid scrim per design.md: no glass, no backdrop-blur; an overlay alpha
+// is allowed for scrims.
+const SCRIM = "color-mix(in srgb, var(--color-ink) 55%, transparent)";
 
 interface InteractiveTutorialProps {
   forceOpen?: boolean;
@@ -211,27 +236,31 @@ export function InteractiveTutorial({
   if (showPrompt && !isActive) {
     return createPortal(
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+        style={{ backgroundColor: SCRIM }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="tour-prompt-title"
       >
         <div
-          className="bg-surface w-full max-w-[420px] rounded-2xl p-6 shadow-2xl border border-brand-500/20 flex flex-col gap-4 text-center rise-in"
-          style={{ borderRadius: "var(--radius-sheet)" }}
+          className="bg-surface w-full max-w-[420px] rounded-xl border border-border p-6 flex flex-col gap-4 text-center"
+          style={{
+            boxShadow: "var(--shadow-card)",
+            animation: "page-enter 260ms var(--ease-out) both",
+          }}
         >
-          <div className="w-16 h-16 rounded-full bg-brand-100 text-brand-800 mx-auto flex items-center justify-center text-3xl shadow-sm border border-brand-600/30">
-            💡
+          <div className="w-16 h-16 rounded-full bg-brand-100 mx-auto flex items-center justify-center">
+            <Icon name="lightbulb" size={28} className="shrink-0 text-brand-800" />
           </div>
 
           <div>
             <h2
               id="tour-prompt-title"
-              className="text-title text-ink-900 font-bold"
+              className="text-title text-ink-900"
             >
-              {t.tutorial.welcomeTitle}
+              {cleanCopy(t.tutorial.welcomeTitle)}
             </h2>
-            <p className="text-body text-ink-600 mt-2 leading-relaxed">
+            <p className="text-body text-muted mt-2 leading-relaxed">
               {t.tutorial.welcomeDesc}
             </p>
           </div>
@@ -240,15 +269,16 @@ export function InteractiveTutorial({
             <button
               type="button"
               onClick={handleStartFromPrompt}
-              className="touch-target w-full py-3.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-body shadow-md transition-all active:scale-98"
+              className="touch-target pressable w-full py-3.5 px-4 rounded-xl bg-brand-600 text-body font-semibold"
+              style={{ color: "var(--color-accent-ink)" }}
             >
-              {t.tutorial.startBtn}
+              {cleanCopy(t.tutorial.startBtn)}
             </button>
 
             <button
               type="button"
               onClick={handleDismissPrompt}
-              className="touch-target w-full py-3 px-4 rounded-xl text-ink-600 hover:bg-neutral-100 font-semibold text-caption transition-colors"
+              className="touch-target pressable w-full py-3 px-4 rounded-xl text-brand-800 font-semibold text-body transition-colors hover:bg-paper-3"
             >
               {t.tutorial.laterBtn}
             </button>
@@ -277,73 +307,71 @@ export function InteractiveTutorial({
       aria-modal="true"
       aria-label="Interactive Tour"
     >
-      {/* Dark overlay backdrop */}
+      {/* Solid scrim — no glass, no backdrop-blur */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-[2px] transition-opacity duration-300"
+        className="absolute inset-0"
+        style={{ backgroundColor: SCRIM }}
         onClick={handleComplete}
       />
 
-      {/* Spotlight cutout / halo */}
+      {/* Spotlight cutout / halo — targeting logic unchanged, painted with tokens */}
       {targetRect && (
         <div
-          className="absolute pointer-events-none transition-all duration-300 ease-out z-[105]"
+          className="absolute pointer-events-none z-[105]"
           style={{
             top: Math.max(0, targetRect.top - 8),
             left: Math.max(0, targetRect.left - 8),
             width: targetRect.width + 16,
             height: targetRect.height + 16,
             borderRadius: "16px",
-            boxShadow: "0 0 0 9999px rgba(10, 15, 30, 0.72)",
-            border: "3px solid #10b981",
-            outline: "2px solid rgba(255, 255, 255, 0.8)",
+            boxShadow: `0 0 0 9999px ${SCRIM}`,
+            border: "3px solid var(--color-brand-600)",
+            outline: "2px solid color-mix(in srgb, var(--color-accent-ink) 80%, transparent)",
           }}
         >
-          {/* Animated pulse beacon */}
-          <span className="absolute -top-3 -right-3 flex h-7 w-7">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-7 w-7 bg-brand-600 text-white text-xs font-bold items-center justify-center border-2 border-white shadow-md">
-              {currentStep + 1}
-            </span>
+          {/* Step beacon */}
+          <span
+            className="absolute -top-3 -right-3 inline-flex rounded-full h-7 w-7 bg-brand-600 items-center justify-center border-2"
+            style={{
+              borderColor: "var(--color-accent-ink)",
+              color: "var(--color-accent-ink)",
+            }}
+          >
+            <span className="text-caption">{currentStep + 1}</span>
           </span>
         </div>
       )}
 
       {/* Floating Tour Guide Dialog Card */}
       <div
-        className={`fixed left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-[460px] z-[110] transition-all duration-300 ease-out ${
+        className={`fixed left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-[460px] z-[110] ${
           isTargetInBottomHalf ? "top-5" : "bottom-20"
         }`}
       >
         <div
-          className="bg-surface rounded-2xl p-5 shadow-2xl border-2 border-brand-500/30 flex flex-col gap-3.5 backdrop-blur-md"
+          className="bg-surface rounded-xl border border-border p-5 flex flex-col gap-3.5"
           style={{
-            borderRadius: "var(--radius-sheet)",
-            boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.4)",
+            boxShadow: "var(--shadow-card)",
+            animation: "page-enter 260ms var(--ease-out) both",
           }}
         >
-          {/* Header with counter and audio button */}
-          <div className="flex items-center justify-between border-b border-border/70 pb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-800 text-caption font-bold">
-                {t.tutorial.stepCounter
+          {/* Header with counter, progress track and audio button */}
+          <div className="flex items-center justify-between gap-3 border-b border-border pb-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="px-2 py-1 rounded-full bg-brand-100 text-brand-800 text-caption whitespace-nowrap">
+                {cleanCopy(t.tutorial.stepCounter)
                   .replace("{current}", String(currentStep + 1))
                   .replace("{total}", String(TOUR_STEPS.length))}
               </span>
 
-              {/* Progress dots */}
-              <div className="flex items-center gap-1.5 ml-1">
-                {TOUR_STEPS.map((_, idx) => (
-                  <span
-                    key={idx}
-                    className={`h-2 rounded-full transition-all ${
-                      idx === currentStep
-                        ? "w-5 bg-brand-600"
-                        : idx < currentStep
-                        ? "w-2 bg-brand-400"
-                        : "w-2 bg-neutral-300"
-                    }`}
-                  />
-                ))}
+              {/* Slim progress track */}
+              <div className="h-1.5 rounded-full bg-paper-3 overflow-hidden flex-1 min-w-[48px]">
+                <div
+                  className="h-full rounded-full bg-brand-600"
+                  style={{
+                    width: `${((currentStep + 1) / TOUR_STEPS.length) * 100}%`,
+                  }}
+                />
               </div>
             </div>
 
@@ -353,15 +381,19 @@ export function InteractiveTutorial({
                 type="button"
                 onClick={handleToggleSpeech}
                 title={isSpeaking ? t.tutorial.stopListenBtn : t.tutorial.listenBtn}
-                className={`px-2.5 py-1 rounded-lg text-caption font-semibold flex items-center gap-1 transition-colors min-h-[36px] ${
+                className={`touch-target pressable px-2.5 py-1 rounded-lg text-caption flex items-center gap-1.5 ${
                   isSpeaking
-                    ? "bg-rose-100 text-rose-700 animate-pulse border border-rose-300"
-                    : "bg-canvas text-ink-700 hover:bg-neutral-200 border border-border"
+                    ? "bg-brand-100 text-brand-800"
+                    : "bg-canvas text-ink-2 border border-border"
                 }`}
               >
-                <span>{isSpeaking ? "⏹️" : "🔊"}</span>
-                <span className="text-xs">
-                  {isSpeaking ? t.tutorial.stopListenBtn : t.tutorial.listenBtn}
+                <Icon
+                  name={isSpeaking ? "x" : "mic"}
+                  size={14}
+                  className="shrink-0"
+                />
+                <span>
+                  {cleanCopy(isSpeaking ? t.tutorial.stopListenBtn : t.tutorial.listenBtn)}
                 </span>
               </button>
 
@@ -370,7 +402,7 @@ export function InteractiveTutorial({
                 type="button"
                 onClick={handleComplete}
                 title={t.tutorial.skipBtn}
-                className="text-ink-600 hover:text-ink-900 text-caption font-semibold px-2 py-1 min-h-[36px]"
+                className="touch-target pressable text-brand-800 text-caption px-2 py-1"
               >
                 {t.tutorial.skipBtn}
               </button>
@@ -379,10 +411,10 @@ export function InteractiveTutorial({
 
           {/* Title & Description */}
           <div>
-            <h3 className="text-heading text-ink-900 font-bold flex items-center gap-2">
-              {stepContent.title}
+            <h3 className="text-heading text-ink-900">
+              {sentenceCase(stepContent.title)}
             </h3>
-            <p className="text-body text-ink-700 mt-1.5 leading-relaxed text-[15px]">
+            <p className="text-[15px] text-muted mt-1.5 leading-relaxed">
               {stepContent.desc}
             </p>
           </div>
@@ -393,21 +425,25 @@ export function InteractiveTutorial({
               type="button"
               onClick={handlePrev}
               disabled={currentStep === 0}
-              className={`touch-target px-4 py-2.5 rounded-xl border border-border text-body font-semibold transition-colors ${
+              className={`touch-target pressable px-4 py-2.5 rounded-xl border border-border text-body font-semibold transition-colors ${
                 currentStep === 0
                   ? "opacity-0 pointer-events-none"
-                  : "bg-surface hover:bg-canvas text-ink-700"
+                  : "bg-surface text-ink-2 hover:bg-paper-3"
               }`}
             >
-              {t.tutorial.prevBtn}
+              {cleanCopy(t.tutorial.prevBtn)}
             </button>
 
             <button
               type="button"
               onClick={handleNext}
-              className="touch-target flex-1 py-3 px-5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-body font-bold shadow-md transition-all active:scale-98 flex items-center justify-center gap-1.5"
+              className="touch-target pressable flex-1 py-3 px-5 rounded-xl bg-brand-600 text-body font-semibold flex items-center justify-center gap-1.5"
+              style={{ color: "var(--color-accent-ink)" }}
             >
-              <span>{isLastStep ? t.tutorial.finishBtn : t.tutorial.nextBtn}</span>
+              <span>{cleanCopy(isLastStep ? t.tutorial.finishBtn : t.tutorial.nextBtn)}</span>
+              {!isLastStep && (
+                <Icon name="arrow-right" size={16} className="shrink-0" />
+              )}
             </button>
           </div>
         </div>

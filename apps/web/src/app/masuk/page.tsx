@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HangaLogo } from "@/components/hanga-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { Icon } from "@/components/icons";
 import { useAuth } from "@/lib/auth-context";
 import { useLanguage } from "@/lib/i18n/context";
 
@@ -103,64 +104,65 @@ export default function MasukPage() {
 
   return (
     <div className="relative flex-1 flex flex-col min-h-dvh overflow-hidden auth-sky">
-      {/* Atmosphere: drifting blobs + the rising sun behind the awning */}
+      {/* Atmosphere: static depth blobs + the sun resting low behind the awning.
+          The sun is kept below the footnote's line so every text line sits on
+          the pale paper sky (4.5:1), never on the orange glow. */}
       <div
         className="blob w-56 h-56 -left-16 top-10"
         style={{ backgroundColor: "var(--color-brand-100)" }}
       />
       <div
         className="blob w-44 h-44 -right-10 top-40"
-        style={{
-          backgroundColor: "var(--color-warn-100)",
-          animationDelay: "-8s",
-        }}
+        style={{ backgroundColor: "var(--color-warn-100)" }}
       />
       <div
-        className="auth-sun w-40 h-40 left-1/2 -translate-x-1/2 bottom-[52px]"
+        className="auth-sun w-56 h-56 left-1/2 -translate-x-1/2 bottom-[-128px]"
         aria-hidden="true"
       />
 
-      {/* Content */}
-      <div className="relative flex-1 flex flex-col mx-auto w-full max-w-[480px] px-5 pt-10 pb-16">
+      {/* Content — one settle entrance for the whole screen; the card column
+          is z-raised above the sun. */}
+      <div
+        className="relative z-10 flex-1 flex flex-col mx-auto w-full max-w-[480px] px-5 pt-10 pb-28"
+        style={{ animation: "page-enter 260ms var(--ease-out) both" }}
+      >
         {/* Brand Header */}
-        <div className="rise-in flex items-center justify-between" style={{ animationDelay: "0ms" }}>
+        <div className="flex items-center justify-between">
           <HangaLogo variant="full" size="md" />
           <LanguageSwitcher variant="compact" />
         </div>
 
         {/* Greeting */}
-        <div className="rise-in mt-8" style={{ animationDelay: "90ms" }}>
+        <div className="mt-8">
           <h1 className="text-display text-ink-900">{greeting}</h1>
-          <p className="text-body text-ink-600 mt-1">
+          <p className="text-body text-muted mt-1">
             {t.auth.loginSubtitle}
           </p>
         </div>
 
         {/* Card */}
         <div
-          className="rise-in bg-surface mt-6 p-5 flex flex-col gap-4"
+          className="bg-surface mt-6 p-5 flex flex-col gap-4"
           style={{
-            animationDelay: "180ms",
             borderRadius: "var(--radius-sheet)",
             boxShadow: "var(--shadow-sheet)",
           }}
         >
           {/* Mode toggle */}
           <div
-            className="relative grid grid-cols-2 bg-canvas p-1"
-            style={{ borderRadius: "var(--radius-badge)" }}
+            className="relative grid grid-cols-2 bg-paper-3 p-1 rounded-xl"
             role="tablist"
             aria-label="Masuk atau daftar"
           >
             <span
               aria-hidden="true"
-              className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-surface transition-transform"
+              className="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-surface rounded-lg transition-transform"
               style={{
-                borderRadius: "var(--radius-badge)",
                 boxShadow: "var(--shadow-card)",
                 transform:
                   mode === "masuk" ? "translateX(0)" : "translateX(100%)",
-                transitionDuration: "var(--duration-normal)",
+                transitionDuration: "var(--dur-short)",
+                transitionTimingFunction: "var(--ease-out)",
               }}
             />
             {(["masuk", "daftar"] as Mode[]).map((m) => (
@@ -174,10 +176,10 @@ export default function MasukPage() {
                   setMode(m);
                   setError(null);
                 }}
-                className={`touch-target text-body font-semibold relative z-10 transition-colors ${
-                  mode === m ? "text-brand-800" : "text-ink-600"
+                className={`touch-target relative z-10 text-body font-semibold rounded-lg transition-colors ${
+                  mode === m ? "text-brand-800" : "text-muted"
                 }`}
-                style={{ borderRadius: "var(--radius-badge)", transitionDuration: "var(--duration-fast)" }}
+                style={{ transitionDuration: "var(--dur-micro)" }}
               >
                 {m === "masuk" ? t.auth.tabLogin : t.auth.tabRegister}
               </button>
@@ -188,11 +190,7 @@ export default function MasukPage() {
           {error && (
             <div
               role="alert"
-              className="px-3 py-2 text-caption text-danger-600"
-              style={{
-                backgroundColor: "var(--color-danger-100)",
-                borderRadius: "var(--radius-chip)",
-              }}
+              className="px-3 py-2 text-caption text-danger bg-danger-bg rounded-lg"
             >
               {error}
             </div>
@@ -201,7 +199,7 @@ export default function MasukPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {mode === "daftar" && (
               <div className="flex flex-col gap-1">
-                <label htmlFor="name" className="text-caption text-ink-600 font-medium">
+                <label htmlFor="name" className="text-caption text-ink-2">
                   {t.auth.nameLabel}
                 </label>
                 <input
@@ -212,18 +210,17 @@ export default function MasukPage() {
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
                   title={t.auth.nameLabel}
-                  className="touch-target w-full px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
-                  style={{ borderRadius: "var(--radius-chip)" }}
+                  className="touch-target w-full px-3 text-body text-ink-900 bg-surface border border-muted rounded-xl"
                 />
-                <p className="text-caption text-ink-600 flex items-center gap-1">
-                  <span>💡</span>
+                <p className="text-caption text-muted flex items-start gap-1.5">
+                  <Icon name="lightbulb" size={14} className="shrink-0" />
                   <span>{t.auth.nameHint}</span>
                 </p>
               </div>
             )}
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="email" className="text-caption text-ink-600 font-medium">
+              <label htmlFor="email" className="text-caption text-ink-2">
                 {t.auth.emailLabel}
               </label>
               <input
@@ -236,18 +233,17 @@ export default function MasukPage() {
                 inputMode="email"
                 autoFocus
                 title={t.auth.emailLabel}
-                className="touch-target w-full px-3 text-body text-ink-900 bg-canvas border border-border focus:outline-none focus:border-brand-600"
-                style={{ borderRadius: "var(--radius-chip)" }}
+                className="touch-target w-full px-3 text-body text-ink-900 bg-surface border border-muted rounded-xl"
               />
-              <p className="text-caption text-ink-600 flex items-center gap-1">
-                <span>💡</span>
+              <p className="text-caption text-muted flex items-start gap-1.5">
+                <Icon name="lightbulb" size={14} className="shrink-0" />
                 <span>{t.auth.emailHint}</span>
               </p>
             </div>
 
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-caption text-ink-600 font-medium">
+                <label htmlFor="password" className="text-caption text-ink-2">
                   {t.auth.passwordLabel}
                 </label>
                 <button
@@ -258,9 +254,14 @@ export default function MasukPage() {
                     showPassword ? t.auth.hidePassword : t.auth.showPassword
                   }
                   title={showPassword ? t.auth.hidePassword : t.auth.showPassword}
-                  className="touch-target text-caption text-ink-600 font-medium hover:text-ink-900"
+                  className="touch-target flex items-center gap-1 text-caption text-muted hover:text-ink-900"
                 >
-                  {showPassword ? t.auth.hidePassword : t.auth.showPassword}
+                  <Icon
+                    name={showPassword ? "eye-off" : "eye"}
+                    size={16}
+                    className="shrink-0"
+                  />
+                  <span>{showPassword ? t.auth.hidePassword : t.auth.showPassword}</span>
                 </button>
               </div>
               <input
@@ -271,21 +272,21 @@ export default function MasukPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={mode === "masuk" ? "current-password" : "new-password"}
                 title={t.auth.passwordLabel}
-                className={`touch-target w-full px-3 text-body text-ink-900 bg-canvas border focus:outline-none ${
+                className="touch-target w-full px-3 text-body text-ink-900 bg-surface border border-muted rounded-xl"
+                style={
                   isPasswordTooShort
-                    ? "border-warn-600"
-                    : "border-border focus:border-brand-600"
-                }`}
-                style={{ borderRadius: "var(--radius-chip)" }}
+                    ? { borderColor: "var(--color-warn)" }
+                    : undefined
+                }
               />
               {isPasswordTooShort ? (
-                <p className="text-caption text-warn-600 flex items-center gap-1">
-                  <span>⚠️</span>
+                <p className="text-caption text-warn flex items-start gap-1.5">
+                  <Icon name="alert" size={14} className="shrink-0" />
                   <span>{t.auth.passwordTooShort}</span>
                 </p>
               ) : (
-                <p className="text-caption text-ink-600 flex items-center gap-1">
-                  <span>💡</span>
+                <p className="text-caption text-muted flex items-start gap-1.5">
+                  <Icon name="lightbulb" size={14} className="shrink-0" />
                   <span>{t.auth.passwordSafe}</span>
                 </p>
               )}
@@ -295,11 +296,7 @@ export default function MasukPage() {
               type="submit"
               disabled={!canSubmit}
               title={mode === "masuk" ? t.auth.loginBtn : t.auth.registerBtn}
-              className="touch-target w-full flex items-center justify-center gap-2 text-body font-semibold text-surface pressable disabled:opacity-50"
-              style={{
-                borderRadius: "var(--radius-card)",
-                backgroundColor: "var(--color-brand-600)",
-              }}
+              className="touch-target h-12 w-full flex items-center justify-center gap-2 text-lg font-extrabold text-white bg-brand-600 rounded-xl pressable disabled:bg-paper-3 disabled:text-muted disabled:font-semibold disabled:border disabled:border-border disabled:cursor-not-allowed"
             >
               {isBusy && mode === "masuk" ? (
                 <>
@@ -320,7 +317,7 @@ export default function MasukPage() {
           {/* Divider */}
           <div className="flex items-center gap-3">
             <span className="flex-1 h-px bg-border" />
-            <span className="text-caption text-neutral-400">{t.auth.orDivider}</span>
+            <span className="text-caption text-muted">{t.auth.orDivider}</span>
             <span className="flex-1 h-px bg-border" />
           </div>
 
@@ -330,8 +327,7 @@ export default function MasukPage() {
             onClick={handleGoogle}
             disabled={isBusy}
             title={t.auth.googleBtn}
-            className="touch-target w-full flex items-center justify-center gap-3 text-body font-semibold text-ink-900 bg-surface border border-border pressable disabled:opacity-50"
-            style={{ borderRadius: "var(--radius-card)" }}
+            className="touch-target h-12 w-full flex items-center justify-center gap-3 text-body font-semibold text-ink-900 bg-surface border border-border rounded-xl pressable disabled:opacity-55 disabled:cursor-not-allowed"
           >
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
               <path
@@ -360,21 +356,20 @@ export default function MasukPage() {
             onClick={handleDemo}
             disabled={isBusy}
             title={t.auth.demoSub}
-            className="flex flex-col items-center justify-center gap-0.5 min-h-[56px] w-full text-body font-semibold text-brand-800 bg-brand-100/70 border border-brand-600 pressable disabled:opacity-50 transition-colors hover:bg-brand-100"
-            style={{ borderRadius: "var(--radius-card)" }}
+            className="touch-target min-h-[48px] w-full flex flex-col items-center justify-center rounded-xl bg-brand-100 px-4 py-1 text-brand-800 pressable disabled:opacity-55 disabled:cursor-not-allowed"
           >
-            {t.auth.demoBtn}
-            <span className="text-caption text-ink-600 font-normal">
+            <span className="flex items-center gap-2 text-body font-semibold">
+              <Icon name="play" size={16} className="shrink-0" />
+              {t.auth.demoBtn}
+            </span>
+            <span className="text-caption text-muted">
               {t.auth.demoSub}
             </span>
           </button>
         </div>
 
-        {/* Footnote */}
-        <p
-          className="rise-in text-caption text-ink-600 text-center mt-6"
-          style={{ animationDelay: "270ms" }}
-        >
+        {/* Footnote — on the open paper sky, well above the sun's glow */}
+        <p className="text-caption text-ink-2 text-center mt-6">
           {t.auth.footnote}
         </p>
       </div>
@@ -395,7 +390,7 @@ export default function MasukPage() {
           onAnimationEnd={() => setShowShutter(false)}
         >
           <div className="text-center px-6">
-            <p className="text-display text-surface" style={{ letterSpacing: "0.06em" }}>
+            <p className="text-display text-white" style={{ letterSpacing: "0.06em" }}>
               HANGA
             </p>
             <p className="text-body text-brand-100 mt-2">
